@@ -133,26 +133,26 @@
             addDateSlot() {
                 const container = document.getElementById('dates-container');
                 const dateId = 'date_' + Date.now();
-                
+
                 const dateSlot = document.createElement('div');
                 dateSlot.className = 'date-slot';
                 dateSlot.innerHTML = `
                     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <input type="date" 
-                               min="${new Date().toISOString().split('T')[0]}" 
+                        <input type="date"
+                               min="${new Date().toISOString().split('T')[0]}"
                                onchange="formBuilder.generateTimeSlots('${dateId}')" required>
-                        <button type="button" class="danger-btn" 
+                        <button type="button" class="danger-btn"
                                 onclick="formBuilder.removeDateSlot(this)">הסר</button>
                     </div>
                     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                         <div>
                             <label>שעת התחלה:</label>
-                            <input type="time" value="16:00" 
+                            <input type="time" value="16:00"
                                    onchange="formBuilder.generateTimeSlots('${dateId}')">
                         </div>
                         <div>
                             <label>שעת סיום:</label>
-                            <input type="time" value="20:00" 
+                            <input type="time" value="20:00"
                                    onchange="formBuilder.generateTimeSlots('${dateId}')">
                         </div>
                         <div>
@@ -167,7 +167,7 @@
                     </div>
                     <div class="time-slots" id="${dateId}"></div>
                 `;
-                
+
                 container.appendChild(dateSlot);
                 this.generateTimeSlots(dateId);
             },
@@ -180,7 +180,7 @@
 
                 const [startHour, startMinute] = startTime.split(':').map(Number);
                 const [endHour, endMinute] = endTime.split(':').map(Number);
-                
+
                 let currentTime = startHour * 60 + startMinute;
                 const endTimeMinutes = endHour * 60 + endMinute;
 
@@ -196,7 +196,7 @@
                     timeSlot.className = 'time-slot available';
                     timeSlot.textContent = timeStr;
                     timeSlot.onclick = () => this.toggleTimeSlot(timeSlot);
-                    
+
                     container.appendChild(timeSlot);
                     currentTime += duration;
                 }
@@ -242,7 +242,7 @@
             previewForm() {
                 const data = this.collectFormData();
                 const preview = document.getElementById('preview-content');
-                
+
                 let html = '<table style="width:100%; border-collapse:collapse;">';
                 data.dates.forEach(dateInfo => {
                     html += `
@@ -268,24 +268,44 @@
                     `;
                 });
                 html += '</table>';
-                
+
                 preview.innerHTML = html;
             },
 
             downloadForm() {
-                const data = this.collectFormData();
-                const template = this.generateBookingFormTemplate(data);
-                
-                const blob = new Blob([template], { type: 'text/html;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'booking-form.html';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            },
+    const data = this.collectFormData();
+    
+    // יצירת אובייקט שמכיל רק את הנתונים הדרושים
+    const templateData = {
+        FORM_URL: data.formUrl,
+        NAME_ENTRY: data.nameEntry,
+        TIME_ENTRY: data.timeEntry,
+        SHEETS_URL: data.sheetsUrl,
+        DATES: JSON.stringify(data.dates)
+    };
+
+    // קריאת תבנית הטופס מקובץ חיצוני
+    fetch('form-template.html')
+        .then(response => response.text())
+        .then(template => {
+            // החלפת פלייסהולדרים
+            let finalHtml = template;
+            for (const [key, value] of Object.entries(templateData)) {
+                finalHtml = finalHtml.replace(`{{${key}}}`, value);
+            }
+
+            // הורדת הקובץ
+            const blob = new Blob([finalHtml], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'booking-form.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+},
 
             generateBookingFormTemplate(data) {
     return `<!DOCTYPE html>
@@ -471,7 +491,7 @@
 <body>
     <div class="container">
         <h1>הזמנת תור</h1>
-        
+
         <div class="date-selector">
             <label for="date-select">בחר תאריך:</label>
             <select id="date-select" onchange="bookingSystem.changeDate()"></select>
@@ -514,7 +534,7 @@
         loadDates() {
             const dateSelect = document.getElementById('date-select');
             dateSelect.innerHTML = '<option value="">בחר תאריך</option>';
-            
+
             SETTINGS.dates.forEach(dateInfo => {
                 const option = document.createElement('option');
                 option.value = dateInfo.date;
