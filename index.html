@@ -1,16 +1,17 @@
-<!DOCTYPE html>
+ה<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ממשק ניהול הזמנות</title>
-    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header>
             <h1>ממשק ניהול הזמנות</h1>
         </header>
+
         <main>
             <section id="configuration-section">
                 <h2>הגדרות מערכת</h2>
@@ -19,14 +20,17 @@
                     <label for="form-title">כותרת טופס</label>
                     <input type="text" id="form-title" placeholder="הזמנת תור">
                 </div>
+
                 <div class="form-group">
                     <label for="google-sheets-link">קישור Google Sheets</label>
                     <input type="text" id="google-sheets-link" placeholder="https://docs.google.com/spreadsheets/...">
                 </div>
+
                 <div class="form-group">
                     <label for="google-forms-link">קישור Google Forms</label>
                     <input type="text" id="google-forms-link" placeholder="https://docs.google.com/forms/...">
                 </div>
+
                 <div class="form-group">
                     <label>זמני הפעלה</label>
                     <div class="time-settings">
@@ -35,6 +39,7 @@
                         <input type="number" id="slot-duration" value="15" min="5" max="60" placeholder="משך פגישה (דקות)">
                     </div>
                 </div>
+
                 <div class="form-group">
                     <label>תאריכים זמינים</label>
                     <div id="dates-container">
@@ -42,6 +47,7 @@
                     </div>
                     <button id="add-date-btn">הוסף תאריך</button>
                 </div>
+
                 <div class="form-group">
                     <label>שדות טופס</label>
                     <div id="form-fields-container">
@@ -49,12 +55,14 @@
                     </div>
                     <button id="add-field-btn">הוסף שדה</button>
                 </div>
+
                 <div class="actions">
                     <button id="save-config-btn">שמור תצורה</button>
                     <button id="export-config-btn">יצוא תצורה</button>
                     <button id="generate-scheduler-btn">צור דף הזמנות</button>
                 </div>
             </section>
+
             <section id="bookings-section">
                 <h2>הזמנות קיימות</h2>
                 <table id="bookings-table">
@@ -73,7 +81,8 @@
             </section>
         </main>
     </div>
+
     <script src="configuration.js"></script>
-    <script src="./scheduler.js"></script>
+    <script src="scheduler.js"></script>
 </body>
 </html>
