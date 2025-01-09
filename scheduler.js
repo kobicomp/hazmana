@@ -6,7 +6,11 @@ class BookingManager {
         this.initializeBookingsTable();
     }
 
-    // טעינת הזמנות מגוגל שיטס
+    initializeBookingsTable() {
+        this.bookingsTable = document.getElementById('bookings-table');
+        this.bookingsTableBody = this.bookingsTable.getElementsByTagName('tbody')[0];
+    }
+
     async loadBookingsFromSheets() {
         try {
             const response = await fetch(this.config.googleSheetsLink, {
@@ -28,7 +32,6 @@ class BookingManager {
         }
     }
 
-    // ניתוח נתוני הזמנות מ-CSV
     parseBookings(csvData) {
         const rows = csvData.split('\n');
         const headers = rows[0].split(',');
@@ -47,119 +50,29 @@ class BookingManager {
         this.updateBookingsTable();
     }
 
-    // עדכון טבלת הזמנות
     updateBookingsTable() {
-        const bookingsList = document.getElementById('bookings-list');
-        bookingsList.innerHTML = '';
+        this.bookingsTableBody.innerHTML = '';
 
-        this.bookings.forEach((booking, index) => {
+        this.bookings.forEach(booking => {
             const row = document.createElement('tr');
             
-            // הצגת עמודות בהתאם לשדות הקיימים
-            const columns = ['תאריך', 'שעה', 'שם'];
-            columns.forEach(column => {
-                const cell = document.createElement('td');
-                cell.textContent = booking[column] || 'לא ידוע';
-                row.appendChild(cell);
-            });
+            const nameCell = document.createElement('td');
+            nameCell.textContent = booking['שם המזמין'] || 'לא ידוע';
+            row.appendChild(nameCell);
 
-            // עמודת פעולות
-            const actionsCell = document.createElement('td');
-            
-            // כפתור מחיקה
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'מחק';
-            deleteBtn.addEventListener('click', () => this.deleteBooking(index));
-            actionsCell.appendChild(deleteBtn);
+            const timeCell = document.createElement('td');
+            timeCell.textContent = booking['שעה'] || 'לא ידוע';
+            row.appendChild(timeCell);
 
-            // כפתור עריכה
-            const editBtn = document.createElement('button');
-            editBtn.textContent = 'ערוך';
-            editBtn.addEventListener('click', () => this.editBooking(index));
-            actionsCell.appendChild(editBtn);
-
-            row.appendChild(actionsCell);
-            bookingsList.appendChild(row);
+            this.bookingsTableBody.appendChild(row);
         });
-    }
-
-    // מחיקת הזמנה
-    deleteBooking(index) {
-        const confirmDelete = confirm('האם אתה בטוח שברצונך למחוק הזמנה זו?');
-        if (confirmDelete) {
-            this.bookings.splice(index, 1);
-            this.updateBookingsTable();
-            this.syncBookingsToSheets();
-        }
-    }
-
-    // עריכת הזמנה
-    editBooking(index) {
-        const booking = this.bookings[index];
-        const editModal = this.createEditModal(booking, index);
-        document.body.appendChild(editModal);
-    }
-
-    // יצירת מודל לעריכת הזמנה
-    createEditModal(booking, index) {
-        const modal = document.createElement('div');
-        modal.classList.add('modal');
-        modal.innerHTML = `
-            <div class="modal-content">
-                <h2>ערוך הזמנה</h2>
-                ${Object.keys(booking).map(key => `
-                    <div>
-                        <label>${key}</label>
-                        <input type="text" name="${key}" value="${booking[key]}" />
-                    </div>
-                `).join('')}
-                <div class="modal-actions">
-                    <button id="save-edit">שמור</button>
-                    <button id="cancel-edit">בטל</button>
-                </div>
-            </div>
-        `;
-
-        // כפתור ביטול
-        modal.querySelector('#cancel-edit').addEventListener('click', () => {
-            document.body.removeChild(modal);
-        });
-
-        // כפתור שמירה
-        modal.querySelector('#save-edit').addEventListener('click', () => {
-            const updatedBooking = {};
-            modal.querySelectorAll('input').forEach(input => {
-                updatedBooking[input.name] = input.value;
-            });
-
-            this.bookings[index] = updatedBooking;
-            this.updateBookingsTable();
-            this.syncBookingsToSheets();
-            document.body.removeChild(modal);
-        });
-
-        return modal;
-    }
-
-    // סנכרון הזמנות לגוגל שיטס
-    async syncBookingsToSheets() {
-        try {
-            // הערה: יישום מלא של סנכרון לגוגל שיטס ידרוש טיפול ב-CORS ואימות
-            console.log('סנכרון הזמנות:', this.bookings);
-            alert('פעולת הסנכרון תומשך בשלב מאוחר יותר');
-        } catch (error) {
-            console.error('שגיאה בסנכרון הזמנות:', error);
-            alert('שגיאה בסנכרון ההזמנות');
-        }
     }
 }
 
-// הכנת מנהל הזמנות לאחר טעינת העמוד
 document.addEventListener('DOMContentLoaded', () => {
     const config = schedulerConfig.currentConfig;
     const bookingManager = new BookingManager(config);
 
-    // טעינת הזמנות
     if (config.googleSheetsLink) {
         bookingManager.loadBookingsFromSheets();
     }
