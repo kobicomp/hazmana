@@ -9,7 +9,6 @@
             margin: 20px;
             background: #f5f5f5;
         }
-
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -18,33 +17,24 @@
             grid-template-columns: 1fr 1fr;
             gap: 20px;
         }
-
-        .settings-panel {
+        .settings-panel, .preview-panel {
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
         .preview-panel {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             max-height: 80vh;
             overflow-y: auto;
         }
-
         .form-group {
             margin-bottom: 20px;
         }
-
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
         }
-
         input, select {
             width: 100%;
             padding: 8px;
@@ -52,100 +42,83 @@
             border-radius: 4px;
             margin-bottom: 5px;
         }
-
+        .date-slot {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .time-slot {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .time-slot.available {
+            background: #e8f5e9;
+        }
+        .time-slot.disabled {
+            background: #ffebee;
+            text-decoration: line-through;
+        }
         button {
             padding: 10px 20px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            background: #2196F3;
             color: white;
             margin: 5px;
+            transition: opacity 0.3s;
         }
-
         button:hover {
             opacity: 0.9;
         }
-
-        .danger {
+        .primary-btn {
+            background: #2196F3;
+        }
+        .danger-btn {
             background: #f44336;
         }
-
-        .success {
+        .success-btn {
             background: #4CAF50;
-        }
-
-        .date-slot {
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-        }
-
-        .time-slots {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 10px;
-            margin: 10px 0;
-        }
-
-        .time-slot {
-            padding: 5px;
-            text-align: center;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .time-slot.available {
-            background: #e8f5e9;
-        }
-
-        .time-slot.disabled {
-            background: #ffebee;
-            text-decoration: line-through;
-            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="settings-panel">
-            <h2>הגדרות הטופס</h2>
-            <form id="generator-form">
+            <h2>הגדרות טופס ההזמנות</h2>
+            <form id="settings-form">
                 <div class="form-group">
-                    <label>קישורים לגוגל:</label>
-                    <input type="url" id="form-url" placeholder="קישור לטופס גוגל" required>
-                    <input type="text" id="name-entry" placeholder="Entry ID לשם" required>
-                    <input type="text" id="time-entry" placeholder="Entry ID לשעה" required>
-                    <input type="url" id="sheets-url" placeholder="קישור לגיליון גוגל" required>
+                    <h3>קישורים לגוגל</h3>
+                    <label>קישור לטופס גוגל:</label>
+                    <input type="url" id="form-url" required>
+                    <label>Entry ID לשם:</label>
+                    <input type="text" id="name-entry" required>
+                    <label>Entry ID לשעה:</label>
+                    <input type="text" id="time-entry" required>
+                    <label>קישור לגיליון גוגל:</label>
+                    <input type="url" id="sheets-url" required>
                 </div>
 
                 <div class="form-group">
-                    <label>תאריכים להזמנה:</label>
+                    <h3>תאריכים וזמנים</h3>
                     <div id="dates-container"></div>
-                    <button type="button" onclick="generator.addDate()">הוסף תאריך</button>
+                    <button type="button" class="primary-btn" onclick="formBuilder.addDateSlot()">הוסף תאריך</button>
                 </div>
 
                 <div class="form-group">
-                    <label>הגדרות זמן:</label>
-                    <div class="time-settings">
-                        <label>שעת התחלה:</label>
-                        <input type="time" id="default-start-time" value="16:00">
-                        <label>שעת סיום:</label>
-                        <input type="time" id="default-end-time" value="20:00">
-                        <label>משך פגישה (דקות):</label>
-                        <select id="default-duration">
-                            <option value="15">15 דקות</option>
-                            <option value="30">30 דקות</option>
-                            <option value="45">45 דקות</option>
-                            <option value="60">שעה</option>
-                        </select>
-                    </div>
+                    <button type="button" class="success-btn" onclick="formBuilder.previewForm()">תצוגה מקדימה</button>
+                    <button type="button" class="success-btn" onclick="formBuilder.downloadForm()">הורד טופס</button>
                 </div>
-
-                <button type="button" onclick="generator.generatePreview()" class="success">תצוגה מקדימה</button>
-                <button type="button" onclick="generator.downloadForm()" class="success">הורד טופס</button>
             </form>
         </div>
 
@@ -156,407 +129,582 @@
     </div>
 
     <script>
-    const generator = {
-  // מאחסן את כל התאריכים והזמנים הזמינים
-  dates: [],
+        const formBuilder = {
+            addDateSlot() {
+                const container = document.getElementById('dates-container');
+                const dateId = 'date_' + Date.now();
+                
+                const dateSlot = document.createElement('div');
+                dateSlot.className = 'date-slot';
+                dateSlot.innerHTML = `
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="date" 
+                               min="${new Date().toISOString().split('T')[0]}" 
+                               onchange="formBuilder.generateTimeSlots('${dateId}')" required>
+                        <button type="button" class="danger-btn" 
+                                onclick="formBuilder.removeDateSlot(this)">הסר</button>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <div>
+                            <label>שעת התחלה:</label>
+                            <input type="time" value="16:00" 
+                                   onchange="formBuilder.generateTimeSlots('${dateId}')">
+                        </div>
+                        <div>
+                            <label>שעת סיום:</label>
+                            <input type="time" value="20:00" 
+                                   onchange="formBuilder.generateTimeSlots('${dateId}')">
+                        </div>
+                        <div>
+                            <label>משך פגישה:</label>
+                            <select onchange="formBuilder.generateTimeSlots('${dateId}')">
+                                <option value="15">15 דקות</option>
+                                <option value="30">30 דקות</option>
+                                <option value="45">45 דקות</option>
+                                <option value="60">שעה</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="time-slots" id="${dateId}"></div>
+                `;
+                
+                container.appendChild(dateSlot);
+                this.generateTimeSlots(dateId);
+            },
 
-  // אתחול המערכת
-  initialize() {
-      this.addDate(); // הוספת תאריך ראשון
-  },
+            generateTimeSlots(dateId) {
+                const dateSlot = document.getElementById(dateId).parentElement;
+                const startTime = dateSlot.querySelector('input[type="time"]:nth-of-type(1)').value;
+                const endTime = dateSlot.querySelector('input[type="time"]:nth-of-type(2)').value;
+                const duration = parseInt(dateSlot.querySelector('select').value);
 
-  // הוספת בלוק תאריך חדש
-  addDate() {
-      const container = document.getElementById('dates-container');
-      const dateSlot = document.createElement('div');
-      dateSlot.className = 'date-slot';
-      const dateId = 'date-' + Date.now();
-      
-      dateSlot.innerHTML = `
-          <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-              <input type="date" onchange="generator.updateDate('${dateId}')" 
-                     min="${new Date().toISOString().split('T')[0]}" required>
-              <button type="button" class="danger" 
-                      onclick="generator.removeDate(this)">הסר</button>
-          </div>
-          <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-              <input type="time" value="16:00" onchange="generator.updateDate('${dateId}')">
-              <input type="time" value="20:00" onchange="generator.updateDate('${dateId}')">
-              <select onchange="generator.updateDate('${dateId}')">
-                  <option value="15">15 דקות</option>
-                  <option value="30">30 דקות</option>
-                  <option value="45">45 דקות</option>
-                  <option value="60">שעה</option>
-              </select>
-          </div>
-          <div class="time-slots" id="${dateId}"></div>
-      `;
-      
-      container.appendChild(dateSlot);
-      this.updateDate(dateId);
-  },
+                const [startHour, startMinute] = startTime.split(':').map(Number);
+                const [endHour, endMinute] = endTime.split(':').map(Number);
+                
+                let currentTime = startHour * 60 + startMinute;
+                const endTimeMinutes = endHour * 60 + endMinute;
 
-  // עדכון שעות זמינות לתאריך
-  updateDate(dateId) {
-      const dateSlot = document.getElementById(dateId).parentElement;
-      const dateInput = dateSlot.querySelector('input[type="date"]');
-      const startTime = dateSlot.querySelectorAll('input[type="time"]')[0].value;
-      const endTime = dateSlot.querySelectorAll('input[type="time"]')[1].value;
-      const duration = parseInt(dateSlot.querySelector('select').value);
-      
-      const timeSlots = [];
-      const [startHour, startMinute] = startTime.split(':').map(Number);
-      const [endHour, endMinute] = endTime.split(':').map(Number);
-      
-      let currentTime = startHour * 60 + startMinute;
-      const endTimeMinutes = endHour * 60 + endMinute;
+                const container = document.getElementById(dateId);
+                container.innerHTML = '';
 
-      while (currentTime < endTimeMinutes) {
-          const hour = Math.floor(currentTime / 60);
-          const minute = currentTime % 60;
-          timeSlots.push(
-              `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-          );
-          currentTime += duration;
-      }
+                while (currentTime < endTimeMinutes) {
+                    const hour = Math.floor(currentTime / 60);
+                    const minute = currentTime % 60;
+                    const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
 
-      const timeSlotsContainer = document.getElementById(dateId);
-      timeSlotsContainer.innerHTML = '';
-      timeSlots.forEach(time => {
-          const slot = document.createElement('div');
-          slot.className = 'time-slot available';
-          slot.textContent = time;
-          slot.onclick = () => this.toggleTimeSlot(slot);
-          timeSlotsContainer.appendChild(slot);
-      });
-  },
+                    const timeSlot = document.createElement('div');
+                    timeSlot.className = 'time-slot available';
+                    timeSlot.textContent = timeStr;
+                    timeSlot.onclick = () => this.toggleTimeSlot(timeSlot);
+                    
+                    container.appendChild(timeSlot);
+                    currentTime += duration;
+                }
+            },
 
-  // הסרת בלוק תאריך
-  removeDate(button) {
-      button.closest('.date-slot').remove();
-  },
+            toggleTimeSlot(slot) {
+                slot.classList.toggle('available');
+                slot.classList.toggle('disabled');
+            },
 
-  // הפעלה/כיבוי של חלון זמן
-  toggleTimeSlot(slot) {
-      slot.classList.toggle('available');
-      slot.classList.toggle('disabled');
-  },
+            removeDateSlot(button) {
+                button.closest('.date-slot').remove();
+            },
 
-  // איסוף כל ההגדרות מהטופס
-  collectSettings() {
-      const settings = {
-          formUrl: document.getElementById('form-url').value,
-          nameEntry: document.getElementById('name-entry').value,
-          timeEntry: document.getElementById('time-entry').value,
-          sheetsUrl: document.getElementById('sheets-url').value,
-          dates: []
-      };
+            collectFormData() {
+                const data = {
+                    formUrl: document.getElementById('form-url').value,
+                    nameEntry: document.getElementById('name-entry').value,
+                    timeEntry: document.getElementById('time-entry').value,
+                    sheetsUrl: document.getElementById('sheets-url').value,
+                    dates: []
+                };
 
-      document.querySelectorAll('.date-slot').forEach(dateSlot => {
-          const date = dateSlot.querySelector('input[type="date"]').value;
-          if (!date) return;
+                document.querySelectorAll('.date-slot').forEach(slot => {
+                    const date = slot.querySelector('input[type="date"]').value;
+                    if (!date) return;
 
-          const startTime = dateSlot.querySelectorAll('input[type="time"]')[0].value;
-          const endTime = dateSlot.querySelectorAll('input[type="time"]')[1].value;
-          const duration = dateSlot.querySelector('select').value;
-          
-          const availableTimes = Array.from(
-              dateSlot.querySelectorAll('.time-slot.available')
-          ).map(slot => slot.textContent);
+                    const startTime = slot.querySelector('input[type="time"]:nth-of-type(1)').value;
+                    const endTime = slot.querySelector('input[type="time"]:nth-of-type(2)').value;
+                    const duration = slot.querySelector('select').value;
+                    const availableTimes = Array.from(
+                        slot.querySelectorAll('.time-slot.available')
+                    ).map(timeSlot => timeSlot.textContent);
 
-          settings.dates.push({
-              date,
-              startTime,
-              endTime,
-              duration,
-              availableTimes
-          });
-      });
+                    data.dates.push({
+                        date, startTime, endTime, duration, availableTimes
+                    });
+                });
 
-      return settings;
-  },
-  // נוסיף את הפונקציה לאובייקט generator
-  downloadForm() {
-      const settings = this.collectSettings();
-      const template = this.generateFormTemplate(settings);
-      
-      const blob = new Blob([template], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'booking-form.html';
-      document.body.appendChild(a);
-      a.click();
-      URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-  },
-  
-  generateFormTemplate(settings) {
-      // היוצרת את תבנית הטופס המלאה עם כל ההגדרות
-      return `<!DOCTYPE html>
-  <html dir="rtl">
-  <head>
-      <meta charset="UTF-8">
-      <title>טופס הזמנת תורים</title>
-      <style>
-          :root {
-              --available-color: #10B981;
-              --booked-color: #EF4444;
-              --pending-color: #F59E0B;
-              --primary-color: #2196F3;
-          }
-  
-          body {
-              font-family: Arial, sans-serif;
-              margin: 20px;
-              background: #f5f5f5;
-          }
-  
-          .container {
-              max-width: 1200px;
-              margin: 0 auto;
-              padding: 20px;
-              background: white;
-              border-radius: 8px;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          }
-  
-          .date-selector {
-              margin-bottom: 20px;
-              padding: 15px;
-              background: white;
-              border-radius: 8px;
-              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-              display: flex;
-              gap: 10px;
-              align-items: center;
-          }
-  
-          select {
-              width: 100%;
-              padding: 10px;
-              border: 1px solid #ddd;
-              border-radius: 4px;
-              font-size: 16px;
-          }
-  
-          .grid {
-              display: grid;
-              grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-              gap: 15px;
-              margin-top: 20px;
-          }
-  
-          .slot-wrapper {
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              gap: 5px;
-              padding: 10px;
-              border: 1px solid #e2e8f0;
-              border-radius: 8px;
-          }
-  
-          .slot-header {
-              font-size: 0.9em;
-              font-weight: bold;
-              color: #4a5568;
-              text-align: center;
-              min-height: 20px;
-          }
-  
-          .time-slot {
-              padding: 15px;
-              border-radius: 4px;
-              cursor: pointer;
-              transition: all 0.3s ease;
-              text-align: center;
-              width: 100%;
-          }
-  
-          .time-slot.available {
-              background-color: var(--available-color);
-              color: white;
-          }
-  
-          .time-slot.booked {
-              background-color: var(--booked-color);
-              color: white;
-              cursor: not-allowed;
-          }
-  
-          .time-slot.pending {
-              background-color: var(--pending-color);
-              color: white;
-              animation: pulse 2s infinite;
-          }
-  
-          .booking-modal {
-              display: none;
-              position: fixed;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-              background: white;
-              padding: 25px;
-              border-radius: 8px;
-              box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-              z-index: 1000;
-              width: 90%;
-              max-width: 400px;
-          }
-  
-          .overlay {
-              display: none;
-              position: fixed;
-              top: 0;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              background: rgba(0,0,0,0.5);
-              z-index: 999;
-          }
-  
-          @keyframes pulse {
-              0% { opacity: 1; }
-              50% { opacity: 0.6; }
-              100% { opacity: 1; }
-          }
-  
-          .form-group {
-              margin-bottom: 15px;
-          }
-  
-          .form-group label {
-              display: block;
-              margin-bottom: 8px;
-              font-weight: bold;
-          }
-  
-          .form-group input {
-              width: 100%;
-              padding: 10px;
-              border: 1px solid #ddd;
-              border-radius: 4px;
-              font-size: 16px;
-          }
-  
-          .button-group {
-              display: flex;
-              gap: 10px;
-              justify-content: flex-end;
-              margin-top: 20px;
-          }
-  
-          button {
-              padding: 10px 20px;
-              border: none;
-              border-radius: 4px;
-              cursor: pointer;
-              font-size: 16px;
-              transition: all 0.3s;
-          }
-  
-          .primary-btn {
-              background-color: var(--primary-color);
-              color: white;
-          }
-  
-          .cancel-btn {
-              background-color: var(--booked-color);
-              color: white;
-          }
-  
-          .status {
-              padding: 10px;
-              margin: 10px 0;
-              border-radius: 4px;
-              text-align: center;
-              display: none;
-          }
-      </style>
-  </head>
-  <body>
-      <div class="container">
-          <h1>הזמנת תור</h1>
-          
-          <div class="date-selector">
-              <label for="date-select">בחר תאריך:</label>
-              <select id="date-select" onchange="bookingSystem.changeDate()"></select>
-          </div>
-  
-          <div id="time-slots" class="grid"></div>
-      </div>
-  
-      <div class="overlay" id="overlay"></div>
-      <div class="booking-modal" id="booking-modal">
-          <h2>הזמנת תור</h2>
-          <form id="booking-form">
-              <div class="form-group">
-                  <label for="name">שם מלא:</label>
-                  <input type="text" id="name" required>
-              </div>
-              <input type="hidden" id="selected-time">
-              <div id="status-message" class="status"></div>
-              <div class="button-group">
-                  <button type="button" class="cancel-btn" onclick="bookingSystem.closeModal()">ביטול</button>
-                  <button type="submit" class="primary-btn">אישור</button>
-              </div>
-          </form>
-      </div>
-  
-      <script>
-          // הגדרות מהמחולל
-          const SETTINGS = ${JSON.stringify(settings, null, 2)};
-  
-          const bookingSystem = {
-              // כל הקוד של מערכת ההזמנות כפי שהיה בדוגמה הקודמת
-          };
-  
-          // אתחול המערכת
-          bookingSystem.initialize();
-      </script>
-  </body>
-  </html>`;
-  }
-  // יצירת תצוגה מקדימה
-  generatePreview() {
-      const settings = this.collectSettings();
-      const preview = document.getElementById('preview-content');
-      
-      let previewHTML = '<table style="width:100%; border-collapse: collapse;">';
-      settings.dates.forEach(date => {
-          previewHTML += `
-              <tr>
-                  <th style="padding:10px; background:#f8f9fa; text-align:right;" colspan="2">
-                      ${new Date(date.date).toLocaleDateString('he-IL', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                      })}
-                  </th>
-              </tr>
-              <tr>
-                  <td style="padding:10px;">
-                      שעות: ${date.startTime} - ${date.endTime}<br>
-                      משך פגישה: ${date.duration} דקות
-                  </td>
-                  <td style="padding:10px;">
-                      זמנים זמינים: ${date.availableTimes.join(', ')}
-                  </td>
-              </tr>
-          `;
-      });
-      previewHTML += '</table>';
-      
-      preview.innerHTML = previewHTML;
-  }
-};
+                return data;
+            },
 
-// אתחול בטעינת הדף
-window.onload = () => generator.initialize();
-// נוסיף את הפונקציה לאובייקט generator
+            previewForm() {
+                const data = this.collectFormData();
+                const preview = document.getElementById('preview-content');
+                
+                let html = '<table style="width:100%; border-collapse:collapse;">';
+                data.dates.forEach(dateInfo => {
+                    html += `
+                        <tr>
+                            <th style="padding:10px; background:#f8f9fa; text-align:right;" colspan="2">
+                                ${new Date(dateInfo.date).toLocaleDateString('he-IL', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                })}
+                            </th>
+                        </tr>
+                        <tr>
+                            <td style="padding:10px;">
+                                שעות פעילות: ${dateInfo.startTime} - ${dateInfo.endTime}<br>
+                                משך פגישה: ${dateInfo.duration} דקות
+                            </td>
+                            <td style="padding:10px;">
+                                שעות זמינות:<br>
+                                ${dateInfo.availableTimes.join(', ')}
+                            </td>
+                        </tr>
+                    `;
+                });
+                html += '</table>';
+                
+                preview.innerHTML = html;
+            },
 
+            downloadForm() {
+                const data = this.collectFormData();
+                const template = this.generateBookingFormTemplate(data);
+                
+                const blob = new Blob([template], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'booking-form.html';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            },
+
+            generateBookingFormTemplate(data) {
+    return `<!DOCTYPE html>
+<html dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>הזמנת תור</title>
+    <style>
+        :root {
+            --available-color: #10B981;
+            --booked-color: #EF4444;
+            --pending-color: #F59E0B;
+            --primary-color: #2196F3;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .date-selector {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        select {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .booking-slot {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .booking-slot:hover {
+            transform: translateY(-2px);
+        }
+
+        .slot-header {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .time-slot {
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .time-slot.available {
+            background-color: var(--available-color);
+            color: white;
+        }
+
+        .time-slot.booked {
+            background-color: var(--booked-color);
+            color: white;
+            cursor: not-allowed;
+        }
+
+        .time-slot.pending {
+            background-color: var(--pending-color);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 1000;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(2px);
+            z-index: 999;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .primary-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .cancel-btn {
+            background-color: var(--booked-color);
+            color: white;
+        }
+
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            text-align: center;
+            display: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>הזמנת תור</h1>
+        
+        <div class="date-selector">
+            <label for="date-select">בחר תאריך:</label>
+            <select id="date-select" onchange="bookingSystem.changeDate()"></select>
+        </div>
+
+        <div id="time-slots" class="grid"></div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="modal" id="booking-modal">
+        <h2>הזמנת תור</h2>
+        <form id="booking-form">
+            <div class="form-group">
+                <label for="name">שם מלא:</label>
+                <input type="text" id="name" required>
+            </div>
+            <input type="hidden" id="selected-time">
+            <div id="status-message" class="status"></div>
+            <div class="button-group">
+                <button type="button" class="cancel-btn" onclick="bookingSystem.closeModal()">ביטול</button>
+                <button type="submit" class="primary-btn">אישור</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    const SETTINGS = ${JSON.stringify(data, null, 2)};
+
+    const bookingSystem = {
+        bookedSlots: new Map(),
+        pendingSlots: new Map(),
+        selectedDate: null,
+
+        initialize() {
+            this.loadDates();
+            this.setupFormHandler();
+            this.startAutoRefresh();
+        },
+
+        loadDates() {
+            const dateSelect = document.getElementById('date-select');
+            dateSelect.innerHTML = '<option value="">בחר תאריך</option>';
+            
+            SETTINGS.dates.forEach(dateInfo => {
+                const option = document.createElement('option');
+                option.value = dateInfo.date;
+                const date = new Date(dateInfo.date);
+                option.textContent = date.toLocaleDateString('he-IL', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                dateSelect.appendChild(option);
+            });
+        },
+
+        getDateSettings(date) {
+            return SETTINGS.dates.find(d => d.date === date);
+        },
+
+        async loadBookings() {
+            try {
+                const response = await fetch(SETTINGS.sheetsUrl + '?t=' + Date.now());
+                const data = await response.text();
+                this.parseBookings(data);
+                this.renderTimeSlots();
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+            }
+        },
+
+        parseBookings(csvData) {
+            this.bookedSlots.clear();
+            const lines = csvData.split('\\n');
+            if (lines.length > 1) {
+                const headers = lines[0].split(',').map(h => h.trim());
+                const nameIndex = headers.indexOf('שם המזמין');
+                const timeIndex = headers.indexOf('שעה');
+
+                for (let i = 1; i < lines.length; i++) {
+                    const columns = lines[i].split(',').map(col => col.trim());
+                    if (columns.length >= Math.max(nameIndex, timeIndex) + 1) {
+                        const name = columns[nameIndex];
+                        const time = columns[timeIndex];
+                        if (name && time && this.selectedDate) {
+                            const key = \`\${this.selectedDate}_\${time}\`;
+                            this.bookedSlots.set(key, { name });
+                        }
+                    }
+                }
+            }
+        },
+
+        renderTimeSlots() {
+            const container = document.getElementById('time-slots');
+            container.innerHTML = '';
+
+            if (!this.selectedDate) {
+                container.innerHTML = '<div class="status">נא לבחור תאריך</div>';
+                return;
+            }
+
+            const dateSettings = this.getDateSettings(this.selectedDate);
+            if (!dateSettings || !dateSettings.availableTimes.length) {
+                container.innerHTML = '<div class="status">אין זמנים זמינים בתאריך זה</div>';
+                return;
+            }
+
+            dateSettings.availableTimes.forEach(time => {
+                const key = \`\${this.selectedDate}_\${time}\`;
+                const slot = document.createElement('div');
+                slot.className = 'booking-slot';
+
+                const header = document.createElement('div');
+                header.className = 'slot-header';
+
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'time-slot';
+                timeDiv.textContent = time;
+
+                if (this.bookedSlots.has(key)) {
+                    const booking = this.bookedSlots.get(key);
+                    timeDiv.className += ' booked';
+                    header.textContent = booking.name;
+                } else if (this.pendingSlots.has(key)) {
+                    timeDiv.className += ' pending';
+                    header.textContent = 'ממתין לאישור';
+                } else {
+                    timeDiv.className += ' available';
+                    header.textContent = 'פנוי';
+                    timeDiv.onclick = () => this.openModal(time);
+                }
+
+                slot.appendChild(header);
+                slot.appendChild(timeDiv);
+                container.appendChild(slot);
+            });
+        },
+
+        changeDate() {
+            this.selectedDate = document.getElementById('date-select').value;
+            if (this.selectedDate) {
+                this.loadBookings();
+            } else {
+                this.renderTimeSlots();
+            }
+        },
+
+        openModal(time) {
+            document.getElementById('selected-time').value = time;
+            document.getElementById('booking-form').reset();
+            document.getElementById('status-message').style.display = 'none';
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('booking-modal').style.display = 'block';
+        },
+
+        closeModal() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('booking-modal').style.display = 'none';
+        },
+
+        setupFormHandler() {
+            document.getElementById('booking-form').onsubmit = async (e) => {
+                e.preventDefault();
+                await this.handleSubmit(e);
+            };
+        },
+
+        async handleSubmit(e) {
+            const name = document.getElementById('name').value;
+            const time = document.getElementById('selected-time').value;
+            const key = \`\${this.selectedDate}_\${time}\`;
+
+            if (this.bookedSlots.has(key) || this.pendingSlots.has(key)) {
+                this.showStatus('התור כבר נתפס', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append(SETTINGS.nameEntry, name);
+            formData.append(SETTINGS.timeEntry, time);
+
+            try {
+                this.pendingSlots.set(key, { name });
+                this.renderTimeSlots();
+
+                await fetch(SETTINGS.formUrl, {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'no-cors'
+                });
+
+                setTimeout(() => {
+                    this.pendingSlots.delete(key);
+                    this.loadBookings();
+                }, 300000); // 5 דקות
+
+                this.closeModal();
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                this.pendingSlots.delete(key);
+                this.showStatus('אירעה שגיאה בשליחת הטופס', 'error');
+                this.renderTimeSlots();
+            }
+        },
+
+        showStatus(message, type) {
+            const status = document.getElementById('status-message');
+            status.textContent = message;
+            status.className = \`status \${type}\`;
+            status.style.display = 'block';
+        },
+
+        startAutoRefresh() {
+            setInterval(() => {
+                if (this.selectedDate) {
+                    this.loadBookings();
+                }
+            }, 30000); // רענון כל 30 שניות
+        }
+    };
+
+    // אתחול המערכת
+    bookingSystem.initialize();
+    </script>
+</body>
+</html>`;
+}
+        };
+
+        // אתחול ראשוני
+        window.onload = () => formBuilder.addDateSlot();
     </script>
 </body>
 </html>
