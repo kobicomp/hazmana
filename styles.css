@@ -84,12 +84,4 @@ button:hover {
 
 #bookings-table th, 
 #bookings-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: right;
-}
-
-#bookings-table th {
-    background-color: var(--primary-color);
-    color: white;
-}
+    border
