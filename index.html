@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>מערכת זימון תורים</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        .time-slot {
+            transition: all 0.3s ease;
+        }
+        .time-slot:hover {
+            transform: scale(1.05);
+        }
+        .time-slot.booked {
+            background-color: #EF4444;
+            color: white;
+            cursor: not-allowed;
+        }
+        .time-slot.available {
+            background-color: #10B981;
+            color: white;
+        }
+        .time-slot.pending {
+            background-color: #F59E0B;
+            color: white;
+        }
+        body {
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="p-6">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
+        <h1 class="text-3xl font-bold text-center mb-8 text-indigo-600">מערכת זימון תורים</h1>
+
+        <div class="mb-6 bg-blue-50 p-4 rounded-lg">
+            <div class="mb-4">
+                <label class="block text-lg font-semibold mb-2" for="name">שם מלא:</label>
+                <input type="text" id="name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold mb-4">בחר שעה:</h2>
+            <div class="grid grid-cols-4 gap-4" id="timeSlots"></div>
+        </div>
+
+        <div class="mt-6 flex justify-center space-x-4">
+            <div class="flex items-center">
+                <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                <span>פנוי</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-4 h-4 bg-red-500 rounded mr-2"></div>
+                <span>תפוס</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
+                <span>בבדיקה</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfaCO4V343FO1pT8eV_Cd3Qd_qyxuwEId7jHgDj1C1Fjf9X2A/formResponse';
+        var SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTFHOCFxTbFBcGY9y3_AZnuo4klHVrDww-7VkowX4r7XBW7Q9o9te-DKQIZS4L8YBazvXdVEyQF2NAx/pub?output=csv';
+
+        var timeSlots = [];
+        var bookedTimes = new Set();
+
+        function fetchBookedSlots() {
+            fetch(SHEETS_URL)
+                .then(function(response) {
+                    return response.text();
+                })
+                .then(function(csvText) {
+                    var rows = csvText.split('\n').slice(1);
+                    rows.forEach(function(row) {
+                        var columns = row.split(',');
+                        if (columns[1]) {
+                            bookedTimes.add(columns[1].trim());
+                        }
+                    });
+                    displayTimeSlots();
+                })
+                .catch(function(error) {
+                    console.error('שגיאה בטעינת התורים התפוסים:', error);
+                });
+        }
+
+        function createTimeSlots() {
+            var startHour = 16;
+            var endHour = 20;
+            var currentTime = startHour * 60;
+
+            while (currentTime < endHour * 60) {
+                var hour = Math.floor(currentTime / 60);
+                var minute = currentTime % 60;
+                var timeStr = padNumber(hour) + ':' + padNumber(minute);
+
+                timeSlots.push({
+                    time: timeStr,
+                    status: 'available'
+                });
+
+                currentTime += 15;
+            }
+            displayTimeSlots();
+        }
+
+        function padNumber(num) {
+            return (num < 10 ? '0' : '') + num;
+        }
+
+        function displayTimeSlots() {
+            var container = document.getElementById('timeSlots');
+            container.innerHTML = '';
+
+            timeSlots.forEach(function(slot, index) {
+                var status = bookedTimes.has(slot.time) ? 'booked' : 'available';
+
+                var div = document.createElement('div');
+                div.className = 'time-slot ' + status + ' p-4 rounded-lg text-center cursor-pointer shadow-sm hover:shadow-md';
+                div.innerHTML = slot.time;
+
+                if (status === 'available') {
+                    div.onclick = function() {
+                        bookTimeSlot(index);
+                    };
+                }
+
+                container.appendChild(div);
+            });
+        }
+
+        function bookTimeSlot(index) {
+            var name = document.getElementById('name').value;
+
+            if (!name) {
+                alert('נא להזין שם');
+                return;
+            }
+
+            var selectedTime = timeSlots[index];
+
+            if (bookedTimes.has(selectedTime.time)) {
+                alert('מצטערים, השעה כבר נתפסה. נא לבחור שעה אחרת.');
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('entry.795013979', name);
+            formData.append('entry.1634119070', selectedTime.time);
+
+            fetch(FORM_URL, {
+                method: 'POST',
+                body: formData,
+                mode: 'no-cors'
+            })
+            .then(function() {
+                bookedTimes.add(selectedTime.time);
+                displayTimeSlots();
+                alert('התור נקבע בהצלחה!');
+                document.getElementById('name').value = '';
+                setTimeout(fetchBookedSlots, 2000);
+            })
+            .catch(function(error) {
+                console.error('שגיאה בקביעת התור:', error);
+                alert('אירעה שגיאה בקביעת התור');
+            });
+        }
+
+        // אתחול המערכת
+        createTimeSlots();
+        fetchBookedSlots();
+
+        // רענון התורים התפוסים כל 30 שניות
+        setInterval(fetchBookedSlots, 30000);
+    </script>
+</body>
+</html>
