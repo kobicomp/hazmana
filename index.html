@@ -14,19 +14,41 @@
         .time-slot.booked {
             background-color: #EF4444;
             color: white;
-            cursor: not-allowed;
+            cursor: help;
         }
         .time-slot.available {
             background-color: #10B981;
             color: white;
+            cursor: pointer;
         }
         .time-slot.pending {
             background-color: #F59E0B;
             color: white;
+            cursor: wait;
         }
         body {
             background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
             min-height: 100vh;
+        }
+        .tooltip {
+            position: relative;
+        }
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            background-color: black;
+            color: white;
+            text-align: center;
+            padding: 5px;
+            border-radius: 6px;
+            position: absolute;
+            z-index: 1;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
         }
     </style>
 </head>
@@ -67,62 +89,63 @@
         var SHEETS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTFHOCFxTbFBcGY9y3_AZnuo4klHVrDww-7VkowX4r7XBW7Q9o9te-DKQIZS4L8YBazvXdVEyQF2NAx/pub?output=csv';
         
         var timeSlots = [];
-        var bookedTimes = new Set();
-        var pendingTimes = new Set();
+        var bookedAppointments = {}; // מידע על התורים התפוסים כולל שם המזמין
+        var pendingAppointments = new Set();
         var lastBookingTime = null;
-        var pendingTimeout = null;
-        var lastFetchTime = null;
+
+        function parseCSV(csv) {
+            var lines = csv.split('\n');
+            var appointments = {};
+            
+            // מתחילים מ-1 כדי לדלג על כותרות
+            for (var i = 1; i < lines.length; i++) {
+                var parts = lines[i].split(',');
+                if (parts.length >= 2) {
+                    var name = parts[0].trim();
+                    var time = parts[1].trim();
+                    if (time) {
+                        appointments[time] = name;
+                    }
+                }
+            }
+            return appointments;
+        }
 
         function fetchBookedSlots() {
-            // עדכון זמן הבקשה האחרונה
-            lastFetchTime = new Date().getTime();
-
-            fetch(SHEETS_URL + '&t=' + new Date().getTime())  // מניעת קישוי עם & במקום ?
-                .then(function(response) {
-                    return response.text();
-                })
-                .then(function(csvText) {
-                    var rows = csvText.split('\n').slice(1);
-                    var currentBookedTimes = new Set();
-                    
-                    rows.forEach(function(row) {
-                        var columns = row.split(',');
-                        if (columns[1]) {
-                            currentBookedTimes.add(columns[1].trim());
-                        }
-                    });
-
-                    // בדיקה האם התור שלנו אושר
-                    if (lastBookingTime) {
-                        pendingTimes.forEach(function(time) {
-                            if (currentBookedTimes.has(time)) {
-                                // התור אושר
-                                pendingTimes.delete(time);
-                                bookedTimes.add(time);
-                            } else if (new Date().getTime() - lastBookingTime > 300000) { // 5 דקות
-                                // התור לא אושר תוך 5 דקות
-                                pendingTimes.delete(time);
-                            }
-                        });
+            fetch(SHEETS_URL, {
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            })
+            .then(function(response) {
+                return response.text();
+            })
+            .then(function(csvText) {
+                bookedAppointments = parseCSV(csvText);
+                
+                // בדיקת תורים בהמתנה
+                pendingAppointments.forEach(function(time) {
+                    if (bookedAppointments[time]) {
+                        pendingAppointments.delete(time);
+                    } else if (lastBookingTime && new Date().getTime() - lastBookingTime > 300000) {
+                        pendingAppointments.delete(time);
                     }
-
-                    bookedTimes = currentBookedTimes;
-                    displayTimeSlots();
-
-                    // שמירת המצב בלוקל סטורג'
-                    saveState();
-                })
-                .catch(function(error) {
-                    console.error('שגיאה בטעינת התורים התפוסים:', error);
                 });
+                
+                displayTimeSlots();
+                saveState();
+            })
+            .catch(function(error) {
+                console.error('שגיאה בטעינת התורים:', error);
+            });
         }
 
         function saveState() {
             var state = {
-                bookedTimes: Array.from(bookedTimes),
-                pendingTimes: Array.from(pendingTimes),
-                lastBookingTime: lastBookingTime,
-                lastFetchTime: lastFetchTime
+                bookedAppointments: bookedAppointments,
+                pendingAppointments: Array.from(pendingAppointments),
+                lastBookingTime: lastBookingTime
             };
             localStorage.setItem('appointmentState', JSON.stringify(state));
         }
@@ -131,15 +154,10 @@
             var savedState = localStorage.getItem('appointmentState');
             if (savedState) {
                 var state = JSON.parse(savedState);
-                bookedTimes = new Set(state.bookedTimes);
-                pendingTimes = new Set(state.pendingTimes);
+                bookedAppointments = state.bookedAppointments;
+                pendingAppointments = new Set(state.pendingAppointments);
                 lastBookingTime = state.lastBookingTime;
-                lastFetchTime = state.lastFetchTime;
-
-                // בדיקה אם עבר יותר מדי זמן מהשמירה האחרונה
-                if (new Date().getTime() - lastFetchTime > 60000) { // דקה
-                    fetchBookedSlots();
-                }
+                displayTimeSlots();
             }
         }
 
@@ -160,6 +178,7 @@
                 
                 currentTime += 15;
             }
+            displayTimeSlots();
         }
 
         function padNumber(num) {
@@ -172,15 +191,28 @@
 
             timeSlots.forEach(function(slot, index) {
                 var status = 'available';
-                if (bookedTimes.has(slot.time)) {
+                var bookerName = '';
+                
+                if (bookedAppointments[slot.time]) {
                     status = 'booked';
-                } else if (pendingTimes.has(slot.time)) {
+                    bookerName = bookedAppointments[slot.time];
+                } else if (pendingAppointments.has(slot.time)) {
                     status = 'pending';
                 }
                 
                 var div = document.createElement('div');
-                div.className = 'time-slot ' + status + ' p-4 rounded-lg text-center cursor-pointer shadow-sm hover:shadow-md';
-                div.innerHTML = slot.time;
+                div.className = 'time-slot tooltip ' + status + ' p-4 rounded-lg text-center shadow-sm hover:shadow-md';
+                
+                var timeSpan = document.createElement('span');
+                timeSpan.textContent = slot.time;
+                div.appendChild(timeSpan);
+                
+                if (bookerName) {
+                    var tooltip = document.createElement('span');
+                    tooltip.className = 'tooltip-text';
+                    tooltip.textContent = 'הוזמן על ידי: ' + bookerName;
+                    div.appendChild(tooltip);
+                }
                 
                 if (status === 'available') {
                     div.onclick = function() {
@@ -194,7 +226,6 @@
 
         function bookTimeSlot(index) {
             var name = document.getElementById('name').value;
-
             if (!name) {
                 alert('נא להזין שם');
                 return;
@@ -202,16 +233,14 @@
 
             var selectedTime = timeSlots[index];
             
-            if (bookedTimes.has(selectedTime.time) || pendingTimes.has(selectedTime.time)) {
+            if (bookedAppointments[selectedTime.time] || pendingAppointments.has(selectedTime.time)) {
                 alert('מצטערים, השעה כבר נתפסה. נא לבחור שעה אחרת.');
                 return;
             }
 
-            // סימון התור כממתין
-            pendingTimes.add(selectedTime.time);
+            pendingAppointments.add(selectedTime.time);
             lastBookingTime = new Date().getTime();
             displayTimeSlots();
-            saveState();
 
             var formData = new FormData();
             formData.append('entry.795013979', name);
@@ -223,27 +252,35 @@
                 mode: 'no-cors'
             })
             .then(function() {
-                alert('הבקשה נשלחה! אנא המתן לאישור...');
+                alert('הבקשה נשלחה! אנא המתן לאישור (עד 5 דקות)');
                 document.getElementById('name').value = '';
-                
-                // הגדרת טיימר לבדיקה חוזרת
-                if (pendingTimeout) {
-                    clearTimeout(pendingTimeout);
-                }
-                pendingTimeout = setTimeout(function checkBooking() {
-                    fetchBookedSlots();
-                    if (pendingTimes.has(selectedTime.time)) {
-                        pendingTimeout = setTimeout(checkBooking, 10000); // בדיקה כל 10 שניות
-                    }
-                }, 10000);
+                checkBookingStatus(selectedTime.time);
             })
             .catch(function(error) {
                 console.error('שגיאה בקביעת התור:', error);
-                pendingTimes.delete(selectedTime.time);
+                pendingAppointments.delete(selectedTime.time);
                 displayTimeSlots();
-                saveState();
                 alert('אירעה שגיאה בקביעת התור');
             });
+        }
+
+        function checkBookingStatus(time) {
+            var checkInterval = setInterval(function() {
+                if (!pendingAppointments.has(time)) {
+                    clearInterval(checkInterval);
+                    return;
+                }
+                
+                fetchBookedSlots();
+                
+                // בדיקה אם עברו 5 דקות
+                if (new Date().getTime() - lastBookingTime > 300000) {
+                    clearInterval(checkInterval);
+                    pendingAppointments.delete(time);
+                    displayTimeSlots();
+                    alert('פג תוקף ההזמנה. נא לנסות שוב.');
+                }
+            }, 10000); // בדיקה כל 10 שניות
         }
 
         // טעינת מצב קודם
@@ -254,7 +291,7 @@
         fetchBookedSlots();
         
         // רענון אוטומטי
-        setInterval(fetchBookedSlots, 10000); // כל 10 שניות
+        setInterval(fetchBookedSlots, 10000);
 
         // שמירת מצב לפני עזיבת הדף
         window.addEventListener('beforeunload', saveState);
