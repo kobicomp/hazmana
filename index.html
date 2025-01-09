@@ -275,7 +275,250 @@
 
       return settings;
   },
-
+  // נוסיף את הפונקציה לאובייקט generator
+  downloadForm() {
+      const settings = this.collectSettings();
+      const template = this.generateFormTemplate(settings);
+      
+      const blob = new Blob([template], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'booking-form.html';
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+  },
+  
+  generateFormTemplate(settings) {
+      // היוצרת את תבנית הטופס המלאה עם כל ההגדרות
+      return `<!DOCTYPE html>
+  <html dir="rtl">
+  <head>
+      <meta charset="UTF-8">
+      <title>טופס הזמנת תורים</title>
+      <style>
+          :root {
+              --available-color: #10B981;
+              --booked-color: #EF4444;
+              --pending-color: #F59E0B;
+              --primary-color: #2196F3;
+          }
+  
+          body {
+              font-family: Arial, sans-serif;
+              margin: 20px;
+              background: #f5f5f5;
+          }
+  
+          .container {
+              max-width: 1200px;
+              margin: 0 auto;
+              padding: 20px;
+              background: white;
+              border-radius: 8px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          }
+  
+          .date-selector {
+              margin-bottom: 20px;
+              padding: 15px;
+              background: white;
+              border-radius: 8px;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+              display: flex;
+              gap: 10px;
+              align-items: center;
+          }
+  
+          select {
+              width: 100%;
+              padding: 10px;
+              border: 1px solid #ddd;
+              border-radius: 4px;
+              font-size: 16px;
+          }
+  
+          .grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+              gap: 15px;
+              margin-top: 20px;
+          }
+  
+          .slot-wrapper {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 5px;
+              padding: 10px;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+          }
+  
+          .slot-header {
+              font-size: 0.9em;
+              font-weight: bold;
+              color: #4a5568;
+              text-align: center;
+              min-height: 20px;
+          }
+  
+          .time-slot {
+              padding: 15px;
+              border-radius: 4px;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              text-align: center;
+              width: 100%;
+          }
+  
+          .time-slot.available {
+              background-color: var(--available-color);
+              color: white;
+          }
+  
+          .time-slot.booked {
+              background-color: var(--booked-color);
+              color: white;
+              cursor: not-allowed;
+          }
+  
+          .time-slot.pending {
+              background-color: var(--pending-color);
+              color: white;
+              animation: pulse 2s infinite;
+          }
+  
+          .booking-modal {
+              display: none;
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              background: white;
+              padding: 25px;
+              border-radius: 8px;
+              box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+              z-index: 1000;
+              width: 90%;
+              max-width: 400px;
+          }
+  
+          .overlay {
+              display: none;
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: rgba(0,0,0,0.5);
+              z-index: 999;
+          }
+  
+          @keyframes pulse {
+              0% { opacity: 1; }
+              50% { opacity: 0.6; }
+              100% { opacity: 1; }
+          }
+  
+          .form-group {
+              margin-bottom: 15px;
+          }
+  
+          .form-group label {
+              display: block;
+              margin-bottom: 8px;
+              font-weight: bold;
+          }
+  
+          .form-group input {
+              width: 100%;
+              padding: 10px;
+              border: 1px solid #ddd;
+              border-radius: 4px;
+              font-size: 16px;
+          }
+  
+          .button-group {
+              display: flex;
+              gap: 10px;
+              justify-content: flex-end;
+              margin-top: 20px;
+          }
+  
+          button {
+              padding: 10px 20px;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 16px;
+              transition: all 0.3s;
+          }
+  
+          .primary-btn {
+              background-color: var(--primary-color);
+              color: white;
+          }
+  
+          .cancel-btn {
+              background-color: var(--booked-color);
+              color: white;
+          }
+  
+          .status {
+              padding: 10px;
+              margin: 10px 0;
+              border-radius: 4px;
+              text-align: center;
+              display: none;
+          }
+      </style>
+  </head>
+  <body>
+      <div class="container">
+          <h1>הזמנת תור</h1>
+          
+          <div class="date-selector">
+              <label for="date-select">בחר תאריך:</label>
+              <select id="date-select" onchange="bookingSystem.changeDate()"></select>
+          </div>
+  
+          <div id="time-slots" class="grid"></div>
+      </div>
+  
+      <div class="overlay" id="overlay"></div>
+      <div class="booking-modal" id="booking-modal">
+          <h2>הזמנת תור</h2>
+          <form id="booking-form">
+              <div class="form-group">
+                  <label for="name">שם מלא:</label>
+                  <input type="text" id="name" required>
+              </div>
+              <input type="hidden" id="selected-time">
+              <div id="status-message" class="status"></div>
+              <div class="button-group">
+                  <button type="button" class="cancel-btn" onclick="bookingSystem.closeModal()">ביטול</button>
+                  <button type="submit" class="primary-btn">אישור</button>
+              </div>
+          </form>
+      </div>
+  
+      <script>
+          // הגדרות מהמחולל
+          const SETTINGS = ${JSON.stringify(settings, null, 2)};
+  
+          const bookingSystem = {
+              // כל הקוד של מערכת ההזמנות כפי שהיה בדוגמה הקודמת
+          };
+  
+          // אתחול המערכת
+          bookingSystem.initialize();
+      </script>
+  </body>
+  </html>`;
+  }
   // יצירת תצוגה מקדימה
   generatePreview() {
       const settings = this.collectSettings();
@@ -313,249 +556,7 @@
 // אתחול בטעינת הדף
 window.onload = () => generator.initialize();
 // נוסיף את הפונקציה לאובייקט generator
-downloadForm() {
-    const settings = this.collectSettings();
-    const template = this.generateFormTemplate(settings);
-    
-    const blob = new Blob([template], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'booking-form.html';
-    document.body.appendChild(a);
-    a.click();
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-},
 
-generateFormTemplate(settings) {
-    // היוצרת את תבנית הטופס המלאה עם כל ההגדרות
-    return `<!DOCTYPE html>
-<html dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>טופס הזמנת תורים</title>
-    <style>
-        :root {
-            --available-color: #10B981;
-            --booked-color: #EF4444;
-            --pending-color: #F59E0B;
-            --primary-color: #2196F3;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background: #f5f5f5;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .date-selector {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .slot-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            padding: 10px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-        }
-
-        .slot-header {
-            font-size: 0.9em;
-            font-weight: bold;
-            color: #4a5568;
-            text-align: center;
-            min-height: 20px;
-        }
-
-        .time-slot {
-            padding: 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            width: 100%;
-        }
-
-        .time-slot.available {
-            background-color: var(--available-color);
-            color: white;
-        }
-
-        .time-slot.booked {
-            background-color: var(--booked-color);
-            color: white;
-            cursor: not-allowed;
-        }
-
-        .time-slot.pending {
-            background-color: var(--pending-color);
-            color: white;
-            animation: pulse 2s infinite;
-        }
-
-        .booking-modal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            z-index: 1000;
-            width: 90%;
-            max-width: 400px;
-        }
-
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 999;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-
-        button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-
-        .primary-btn {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .cancel-btn {
-            background-color: var(--booked-color);
-            color: white;
-        }
-
-        .status {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 4px;
-            text-align: center;
-            display: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>הזמנת תור</h1>
-        
-        <div class="date-selector">
-            <label for="date-select">בחר תאריך:</label>
-            <select id="date-select" onchange="bookingSystem.changeDate()"></select>
-        </div>
-
-        <div id="time-slots" class="grid"></div>
-    </div>
-
-    <div class="overlay" id="overlay"></div>
-    <div class="booking-modal" id="booking-modal">
-        <h2>הזמנת תור</h2>
-        <form id="booking-form">
-            <div class="form-group">
-                <label for="name">שם מלא:</label>
-                <input type="text" id="name" required>
-            </div>
-            <input type="hidden" id="selected-time">
-            <div id="status-message" class="status"></div>
-            <div class="button-group">
-                <button type="button" class="cancel-btn" onclick="bookingSystem.closeModal()">ביטול</button>
-                <button type="submit" class="primary-btn">אישור</button>
-            </div>
-        </form>
-    </div>
-
-    <script>
-        // הגדרות מהמחולל
-        const SETTINGS = ${JSON.stringify(settings, null, 2)};
-
-        const bookingSystem = {
-            // כל הקוד של מערכת ההזמנות כפי שהיה בדוגמה הקודמת
-        };
-
-        // אתחול המערכת
-        bookingSystem.initialize();
-    </script>
-</body>
-</html>`;
-}
     </script>
 </body>
 </html>
