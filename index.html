@@ -2,33 +2,58 @@
 <html dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ממשק ניהול - יצירת טופס הזמנות</title>
+    <title>יצירת טופס הזמנות</title>
     <style>
+        :root {
+            --primary-color: #2196F3;
+            --success-color: #4CAF50;
+            --danger-color: #f44336;
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
             background: #f5f5f5;
+            direction: rtl;
         }
 
         .container {
-            max-width: 800px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
+        }
+
+        .settings-panel {
             background: white;
+            padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .form-section {
-            margin-bottom: 30px;
+        .preview-panel {
+            background: white;
             padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
         }
 
         h2 {
             margin-top: 0;
-            color: #2563eb;
+            color: var(--primary-color);
+            margin-bottom: 20px;
         }
 
         .form-group {
@@ -46,17 +71,34 @@
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            margin-bottom: 5px;
+            box-sizing: border-box;
         }
 
-        .radio-group {
-            display: flex;
-            gap: 20px;
-            margin: 10px 0;
+        .date-entry {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
         }
 
-        .radio-group label {
-            font-weight: normal;
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .time-slot {
+            padding: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .time-slot.selected {
+            background: var(--primary-color);
+            color: white;
         }
 
         button {
@@ -64,125 +106,177 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            background: #2563eb;
-            color: white;
             font-size: 16px;
+            transition: all 0.3s;
         }
 
-        button:hover {
+        .primary-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .success-btn {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .danger-btn {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        button:hover:not(:disabled) {
             opacity: 0.9;
-        }
-
-        #itemsContainer div {
-            margin-bottom: 15px;
-            padding: 15px;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-        }
-
-        .preview {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8fafc;
-            border-radius: 4px;
+            transform: translateY(-1px);
         }
 
         .error {
-            color: #dc2626;
-            margin: 5px 0;
+            color: var(--danger-color);
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        #preview-frame {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>יצירת טופס הזמנות</h1>
+        <div class="settings-panel">
+            <h1>יצירת טופס הזמנות</h1>
 
-        <form id="generatorForm">
-            <div class="form-section">
-                <h2>הגדרות בסיסיות</h2>
-                <div class="form-group">
-                    <label>סוג מערכת:</label>
-                    <div class="radio-group">
-                        <label>
-                            <input type="radio" name="bookingType" value="time" checked 
-                                   onchange="toggleSystemType()"> מערכת הזמנת תורים
-                        </label>
-                        <label>
-                            <input type="radio" name="bookingType" value="item" 
-                                   onchange="toggleSystemType()"> מערכת הזמנת פריטים
-                        </label>
+            <form id="generator-form">
+                <div class="section">
+                    <h2>הגדרות כלליות</h2>
+                    <div class="form-group">
+                        <label>כותרת הטופס:</label>
+                        <input type="text" id="form-title" required>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>כותרת הטופס:</label>
-                    <input type="text" id="pageTitle" required>
+                <div class="section">
+                    <h2>הגדרות Google</h2>
+                    <div class="form-group">
+                        <label>קישור לטופס:</label>
+                        <input type="url" id="form-url" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Entry ID לשם:</label>
+                        <input type="text" id="name-entry" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Entry ID לתאריך ושעה:</label>
+                        <input type="text" id="time-entry" required>
+                    </div>
+                    <div class="form-group">
+                        <label>קישור לגיליון:</label>
+                        <input type="url" id="sheets-url" required>
+                    </div>
                 </div>
-            </div>
 
-            <div class="form-section">
-                <h2>הגדרות Google</h2>
-                <div class="form-group">
-                    <label>קישור לטופס גוגל:</label>
-                    <input type="url" id="formUrl" required>
+                <div class="section">
+                    <h2>תאריכים ושעות</h2>
+                    <div id="dates-container"></div>
+                    <button type="button" class="primary-btn" onclick="addDate()">הוסף תאריך</button>
                 </div>
-                <div class="form-group">
-                    <label>Entry ID לשם:</label>
-                    <input type="text" id="nameEntry" required>
-                </div>
-                <div class="form-group">
-                    <label>Entry ID לערך (זמן/פריט):</label>
-                    <input type="text" id="valueEntry" required>
-                </div>
-                <div class="form-group">
-                    <label>קישור לגיליון גוגל:</label>
-                    <input type="url" id="sheetsUrl" required>
-                </div>
-            </div>
 
-            <div id="timeSettings" class="form-section">
-                <h2>הגדרות זמן</h2>
+                <div class="button-group">
+                    <button type="submit" class="success-btn">צור טופס</button>
+                    <button type="button" class="primary-btn" onclick="updatePreview()">תצוגה מקדימה</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="preview-panel">
+            <h2>תצוגה מקדימה</h2>
+            <iframe id="preview-frame"></iframe>
+        </div>
+    </div>
+
+    <script>
+        let availableTimes = [];
+        
+        function generateTimes(startTime, endTime, interval) {
+            const times = [];
+            let current = new Date(`2000-01-01T${startTime}`);
+            const end = new Date(`2000-01-01T${endTime}`);
+            
+            while (current < end) {
+                times.push(current.toTimeString().slice(0, 5));
+                current.setMinutes(current.getMinutes() + parseInt(interval));
+            }
+            
+            return times;
+        }
+
+        function addDate() {
+            const container = document.createElement('div');
+            container.className = 'date-entry';
+            
+            const dateId = 'date-' + Date.now();
+            container.innerHTML = `
+                <div class="form-group">
+                    <label>תאריך:</label>
+                    <input type="date" class="date-input" required 
+                           min="${new Date().toISOString().split('T')[0]}">
+                </div>
                 <div class="form-group">
                     <label>שעת התחלה:</label>
-                    <input type="time" id="startTime" value="16:00" required>
+                    <input type="time" class="start-time" value="16:00" required>
                 </div>
                 <div class="form-group">
                     <label>שעת סיום:</label>
-                    <input type="time" id="endTime" value="20:00" required>
+                    <input type="time" class="end-time" value="20:00" required>
                 </div>
                 <div class="form-group">
-                    <label>הפרש זמן בין תורים (בדקות):</label>
-                    <select id="timeInterval" required>
+                    <label>הפרש זמן (דקות):</label>
+                    <select class="interval">
                         <option value="15">15 דקות</option>
                         <option value="30">30 דקות</option>
                         <option value="45">45 דקות</option>
                         <option value="60">שעה</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="enableNavigation" checked>
-                        אפשר ניווט בין ימים
-                    </label>
-                </div>
-            </div>
+                <div class="time-slots" id="${dateId}"></div>
+                <button type="button" class="danger-btn" 
+                        onclick="this.parentElement.remove()">הסר תאריך</button>
+            `;
 
-            <div id="itemSettings" class="form-section" style="display: none;">
-                <h2>הגדרות פריטים</h2>
-                <button type="button" onclick="addItem()">הוסף פריט</button>
-                <div id="itemsContainer"></div>
-            </div>
+            // הוספת מאזיני אירועים לשדות הזמן
+            const timeInputs = container.querySelectorAll('input[type="time"], select');
+            timeInputs.forEach(input => {
+                input.addEventListener('change', () => updateTimeSlots(dateId));
+            });
 
-            <button type="submit">צור טופס</button>
-        </form>
+            document.getElementById('dates-container').appendChild(container);
+            updateTimeSlots(dateId);
+        }
 
-        <div class="preview">
-            <h3>תצוגה מקדימה של ההגדרות</h3>
-            <pre id="previewConfig"></pre>
-        </div>
-    </div>
+        function updateTimeSlots(dateId) {
+            const container = document.getElementById(dateId);
+            const parent = container.parentElement;
+            const startTime = parent.querySelector('.start-time').value;
+            const endTime = parent.querySelector('.end-time').value;
+            const interval = parent.querySelector('.interval').value;
 
-    <script>
+            const times = generateTimes(startTime, endTime, interval);
+            container.innerHTML = '';
+
+            times.forEach(time => {
+                const slot = document.createElement('div');
+                slot.className = 'time-slot selected';
+                slot.textContent = time;
+                slot.onclick = () => {
+                    slot.classList.toggle('selected');
+                };
+                container.appendChild(slot);
+            });
+        }
+
         async function loadTemplate() {
             try {
                 const response = await fetch('template.html');
@@ -194,76 +288,47 @@
             }
         }
 
-        function toggleSystemType() {
-            const type = document.querySelector('input[name="bookingType"]:checked').value;
-            document.getElementById('timeSettings').style.display = type === 'time' ? 'block' : 'none';
-            document.getElementById('itemSettings').style.display = type === 'item' ? 'block' : 'none';
-        }
-
-        function addItem() {
-            const container = document.getElementById('itemsContainer');
-            const itemDiv = document.createElement('div');
-            itemDiv.innerHTML = `
-                <div class="form-group">
-                    <label>שם הפריט:</label>
-                    <input type="text" class="item-name" required>
-                </div>
-                <div class="form-group">
-                    <label>מחיר:</label>
-                    <input type="number" class="item-price">
-                </div>
-                <div class="form-group">
-                    <label>תיאור:</label>
-                    <input type="text" class="item-description">
-                </div>
-                <div class="form-group">
-                    <label>כמות במלאי:</label>
-                    <input type="number" class="item-quantity">
-                </div>
-                <button type="button" onclick="this.parentElement.remove()">הסר פריט</button>
-            `;
-            container.appendChild(itemDiv);
-        }
-
         function collectFormData() {
-            const type = document.querySelector('input[name="bookingType"]:checked').value;
-            
-            let config = {
-                BOOKING_TYPE: type,
-                PAGE_TITLE: document.getElementById('pageTitle').value,
-                FORM_URL: document.getElementById('formUrl').value,
-                NAME_ENTRY: document.getElementById('nameEntry').value,
-                VALUE_ENTRY: document.getElementById('valueEntry').value,
-                SHEETS_URL: document.getElementById('sheetsUrl').value
-            };
-
-            if (type === 'time') {
-                const [startHour, startMinute] = document.getElementById('startTime').value.split(':');
-                const [endHour, endMinute] = document.getElementById('endTime').value.split(':');
+            const dates = Array.from(document.getElementsByClassName('date-entry')).map(entry => {
+                const date = entry.querySelector('.date-input').value;
+                const timeSlots = Array.from(entry.querySelectorAll('.time-slot.selected'))
+                    .map(slot => slot.textContent);
                 
-                config = {
-                    ...config,
-                    START_TIME: parseInt(startHour),
-                    END_TIME: parseInt(endHour),
-                    TIME_INTERVAL: parseInt(document.getElementById('timeInterval').value),
-                    ENABLE_NAVIGATION: document.getElementById('enableNavigation').checked
+                return {
+                    date,
+                    times: timeSlots
                 };
-            } else {
-                const items = Array.from(document.getElementsByClassName('item-name')).map((input, index) => ({
-                    id: index + 1,
-                    name: input.value,
-                    price: input.parentElement.parentElement.querySelector('.item-price').value,
-                    description: input.parentElement.parentElement.querySelector('.item-description').value,
-                    quantity: input.parentElement.parentElement.querySelector('.item-quantity').value
-                }));
-                
-                config.ITEMS_LIST = JSON.stringify(items);
-            }
+            });
 
-            return config;
+            return {
+                FORM_TITLE: document.getElementById('form-title').value,
+                FORM_URL: document.getElementById('form-url').value,
+                NAME_ENTRY: document.getElementById('name-entry').value,
+                TIME_ENTRY: document.getElementById('time-entry').value,
+                SHEETS_URL: document.getElementById('sheets-url').value,
+                DATES_CONFIG: JSON.stringify(dates)
+            };
         }
 
-        document.getElementById('generatorForm').onsubmit = async (e) => {
+        async function updatePreview() {
+            const template = await loadTemplate();
+            if (!template) return;
+
+            const config = collectFormData();
+            let previewHtml = template;
+
+            // החלפת הפלייסהולדרים
+            Object.entries(config).forEach(([key, value]) => {
+                const placeholder = `__${key}__`;
+                previewHtml = previewHtml.replaceAll(placeholder, value);
+            });
+
+            // הצגת התצוגה המקדימה
+            const frame = document.getElementById('preview-frame');
+            frame.srcdoc = previewHtml;
+        }
+
+        document.getElementById('generator-form').onsubmit = async (e) => {
             e.preventDefault();
             
             const template = await loadTemplate();
@@ -272,9 +337,8 @@
             const config = collectFormData();
             let finalHtml = template;
 
-            // החלפת כל הפלייסהולדרים
             Object.entries(config).forEach(([key, value]) => {
-                const placeholder = `{{${key}}}`;
+                const placeholder = `__${key}__`;
                 finalHtml = finalHtml.replaceAll(placeholder, value);
             });
 
@@ -288,11 +352,10 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-
-            // עדכון תצוגה מקדימה
-            document.getElementById('previewConfig').textContent = 
-                JSON.stringify(config, null, 2);
         };
+
+        // הוספת תאריך ראשון בטעינת הדף
+        addDate();
     </script>
 </body>
 </html>
