@@ -195,19 +195,19 @@
 
     <script>
         // הגדרות המערכת
-        const CONFIG = {
-            SHEETS_URL: '{{SHEETS_URL}}',
-            FORM_URL: '{{FORM_URL}}',
-            NAME_ENTRY: '{{NAME_ENTRY}}',
-            TIME_ENTRY: '{{TIME_ENTRY}}',
-            START_TIME: {{START_TIME}},
-            END_TIME: {{END_TIME}},
-            TIME_INTERVAL: {{TIME_INTERVAL}},
-            SHOW_PHONE: {{SHOW_PHONE}},
-            ENABLE_NAVIGATION: {{ENABLE_NAVIGATION}},
-            PENDING_TIMEOUT: {{PENDING_TIMEOUT}},
-            REFRESH_INTERVAL: {{REFRESH_INTERVAL}}
-        };
+       const CONFIG = {
+    SHEETS_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTFHOCFxTbFBcGY9y3_AZnuo4klHVrDww-7VkowX4r7XBW7Q9o9te-DKQIZS4L8YBazvXdVEyQF2NAx/pub?output=csv',
+    FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfaCO4V343FO1pT8eV_Cd3Qd_qyxuwEId7jHgDj1C1Fjf9X2A/formResponse',
+    NAME_ENTRY: 'entry.795013979',
+    TIME_ENTRY: 'entry.1634119070',
+    START_TIME: 16,
+    END_TIME: 20,
+    TIME_INTERVAL: 15,
+    SHOW_PHONE: true,
+    ENABLE_NAVIGATION: true,
+    PENDING_TIMEOUT: 300000, // 5 minutes
+    REFRESH_INTERVAL: 30000  // 30 seconds
+};
 
         const scheduler = {
             currentDate: new Date(),
