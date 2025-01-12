@@ -2,20 +2,18 @@
 <html dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ממשק ניהול - יצירת טופס הזמנות</title>
+    <title>יצירת טופס הזמנות</title>
     <style>
         :root {
             --primary-color: #2196F3;
             --success-color: #4CAF50;
             --danger-color: #f44336;
-            --warning-color: #ff9800;
         }
 
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
             background: #f5f5f5;
-            line-height: 1.6;
         }
 
         .container {
@@ -50,6 +48,7 @@
             padding: 20px;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
+            background: #f8fafc;
         }
 
         h1, h2 {
@@ -67,41 +66,19 @@
             font-weight: bold;
         }
 
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 16px;
-            margin-bottom: 5px;
+            box-sizing: border-box;
         }
 
-        .date-entry {
-            background: #f8fafc;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-
-        .time-slots {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .time-slot {
-            padding: 10px;
-            background: #e2e8f0;
-            border-radius: 4px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .time-slot.selected {
-            background: var(--primary-color);
-            color: white;
+        .help-text {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
         }
 
         button {
@@ -133,16 +110,32 @@
             color: white;
         }
 
-        .help-text {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 5px;
+        .date-entry, .item-entry {
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 15px;
         }
 
-        .error-text {
-            color: var(--danger-color);
-            font-size: 0.9em;
-            margin-top: 5px;
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .time-slot {
+            padding: 10px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .time-slot.selected {
+            background: var(--primary-color);
+            color: white;
         }
 
         #preview-frame {
@@ -153,17 +146,10 @@
         }
 
         .preview-note {
-            background: #e8f5e9;
             padding: 10px;
+            background: #e8f5e9;
             border-radius: 4px;
             margin-bottom: 10px;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
         }
     </style>
 </head>
@@ -174,11 +160,18 @@
             
             <form id="generator-form">
                 <div class="section">
-                    <h2>הגדרות כלליות</h2>
+                    <h2>הגדרות בסיסיות</h2>
+                    <div class="form-group">
+                        <label>סוג מערכת:</label>
+                        <select id="system-type" onchange="toggleSystemType()">
+                            <option value="time">מערכת הזמנת תורים</option>
+                            <option value="item">מערכת הזמנת פריטים</option>
+                        </select>
+                    </div>
+
                     <div class="form-group">
                         <label>כותרת הטופס:</label>
                         <input type="text" id="form-title" required>
-                        <div class="help-text">הכותרת שתופיע בראש הטופס</div>
                     </div>
                 </div>
 
@@ -186,40 +179,39 @@
                     <h2>הגדרות Google</h2>
                     <div class="form-group">
                         <label>קישור לטופס גוגל:</label>
-                        <input type="url" id="form-url" required 
-                               placeholder="https://docs.google.com/forms/d/e/.../formResponse">
-                        <div class="help-text">הקישור המלא לטופס גוגל (עם formResponse בסוף)</div>
+                        <input type="url" id="form-url" required>
+                        <div class="help-text">העתק את הקישור מהטופס - הסיומת תתוקן אוטומטית ל-formResponse</div>
                     </div>
-
                     <div class="form-group">
                         <label>Entry ID לשם:</label>
-                        <input type="text" id="name-entry" required 
-                               placeholder="entry.123456789">
-                        <div class="help-text">מזהה שדה השם בטופס גוגל</div>
+                        <input type="text" id="name-entry" required>
                     </div>
-
                     <div class="form-group">
-                        <label>Entry ID לתאריך ושעה:</label>
-                        <input type="text" id="time-entry" required 
-                               placeholder="entry.987654321">
-                        <div class="help-text">מזהה שדה התאריך והשעה בטופס גוגל</div>
+                        <label>Entry ID לערך (תאריך/פריט):</label>
+                        <input type="text" id="value-entry" required>
                     </div>
-
                     <div class="form-group">
                         <label>קישור לגיליון גוגל:</label>
-                        <input type="url" id="sheets-url" required 
-                               placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
-                        <div class="help-text">הקישור לגיליון שמקבל את התשובות (עם ?output=csv בסוף)</div>
+                        <input type="url" id="sheets-url" required>
+                        <div class="help-text">העתק את קישור הפרסום - יתווסף אוטומטית ?output=csv</div>
                     </div>
                 </div>
 
-                <div class="section">
+                <!-- אזור הזמנת תורים -->
+                <div id="time-section" class="section">
                     <h2>תאריכים ושעות</h2>
                     <div id="dates-container"></div>
                     <button type="button" class="primary-btn" onclick="addDate()">הוסף תאריך</button>
                 </div>
 
-                <div class="button-group">
+                <!-- אזור הזמנת פריטים -->
+                <div id="items-section" class="section" style="display: none;">
+                    <h2>פריטים להזמנה</h2>
+                    <div id="items-container"></div>
+                    <button type="button" class="primary-btn" onclick="addItem()">הוסף פריט</button>
+                </div>
+
+                <div class="button-group" style="margin-top: 20px;">
                     <button type="button" class="primary-btn" onclick="updatePreview()">רענן תצוגה מקדימה</button>
                     <button type="submit" class="success-btn">צור והורד טופס</button>
                 </div>
@@ -229,25 +221,36 @@
         <div class="preview-panel">
             <h2>תצוגה מקדימה</h2>
             <div class="preview-note">
-                כאן תוכל לראות כיצד ייראה הטופס למשתמשים. 
-                לחץ על "רענן תצוגה מקדימה" כדי לראות את השינויים.
+                כך ייראה הטופס למשתמשים. לחץ על "רענן תצוגה מקדימה" כדי לראות את השינויים.
             </div>
             <iframe id="preview-frame"></iframe>
         </div>
     </div>
 
     <script>
-        function generateTimeSlots(startTime, endTime, interval) {
-            const times = [];
-            let current = new Date(`2000-01-01T${startTime}`);
-            const end = new Date(`2000-01-01T${endTime}`);
+        function fixGoogleUrls() {
+            const formUrlInput = document.getElementById('form-url');
+            const sheetsUrlInput = document.getElementById('sheets-url');
             
-            while (current < end) {
-                times.push(current.toTimeString().slice(0, 5));
-                current.setMinutes(current.getMinutes() + parseInt(interval));
+            // תיקון קישור הטופס
+            let formUrl = formUrlInput.value;
+            if (formUrl.includes('viewform')) {
+                formUrl = formUrl.replace('viewform', 'formResponse');
+                formUrlInput.value = formUrl;
             }
             
-            return times;
+            // תיקון קישור הגיליון
+            let sheetsUrl = sheetsUrlInput.value;
+            if (!sheetsUrl.includes('output=csv')) {
+                sheetsUrl = sheetsUrl + (sheetsUrl.includes('?') ? '&' : '?') + 'output=csv';
+                sheetsUrlInput.value = sheetsUrl;
+            }
+        }
+
+        function toggleSystemType() {
+            const type = document.getElementById('system-type').value;
+            document.getElementById('time-section').style.display = type === 'time' ? 'block' : 'none';
+            document.getElementById('items-section').style.display = type === 'item' ? 'block' : 'none';
         }
 
         function addDate() {
@@ -279,7 +282,6 @@
                     </select>
                 </div>
                 <div class="time-slots" id="${dateId}"></div>
-                <div class="help-text">לחץ על השעות כדי לבחור אילו שעות יהיו זמינות</div>
                 <button type="button" class="danger-btn" 
                         onclick="this.parentElement.remove()">הסר תאריך</button>
             `;
@@ -291,6 +293,49 @@
 
             document.getElementById('dates-container').appendChild(container);
             updateTimeSlots(dateId);
+        }
+
+        function addItem() {
+            const container = document.createElement('div');
+            container.className = 'item-entry';
+            container.innerHTML = `
+                <div class="form-group">
+                    <label>שם הפריט:</label>
+                    <input type="text" class="item-name" required>
+                </div>
+                <div class="form-group">
+                    <label>תיאור:</label>
+                    <textarea class="item-description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>מחיר:</label>
+                    <input type="number" class="item-price" min="0">
+                </div>
+                <div class="form-group">
+                    <label>כמות במלאי:</label>
+                    <input type="number" class="item-quantity" min="0">
+                </div>
+                <div class="form-group">
+                    <label>קישור לתמונה:</label>
+                    <input type="url" class="item-image">
+                </div>
+                <button type="button" class="danger-btn" 
+                        onclick="this.parentElement.remove()">הסר פריט</button>
+            `;
+            document.getElementById('items-container').appendChild(container);
+        }
+
+        function generateTimeSlots(startTime, endTime, interval) {
+            const times = [];
+            let current = new Date(`2000-01-01T${startTime}`);
+            const end = new Date(`2000-01-01T${endTime}`);
+            
+            while (current < end) {
+                times.push(current.toTimeString().slice(0, 5));
+                current.setMinutes(current.getMinutes() + parseInt(interval));
+            }
+            
+            return times;
         }
 
         function updateTimeSlots(dateId) {
@@ -314,6 +359,47 @@
             });
         }
 
+        function collectFormData() {
+            const type = document.getElementById('system-type').value;
+            const formData = {
+                BOOKING_TYPE: type,
+                FORM_TITLE: document.getElementById('form-title').value,
+                FORM_URL: document.getElementById('form-url').value,
+                NAME_ENTRY: document.getElementById('name-entry').value,
+                VALUE_ENTRY: document.getElementById('value-entry').value,
+                SHEETS_URL: document.getElementById('sheets-url').value,
+                SHOW_DATES: type === 'time' ? 'block' : 'none'
+            };
+
+            if (type === 'time') {
+                const dates = Array.from(document.getElementsByClassName('date-entry')).map(entry => {
+                    const date = entry.querySelector('.date-input').value;
+                    const timeSlots = Array.from(entry.querySelectorAll('.time-slot.selected'))
+                        .map(slot => slot.textContent);
+                    
+                    return {
+                        date,
+                        times: timeSlots
+                    };
+                });
+                formData.DATES_CONFIG = JSON.stringify(dates);
+                formData.ITEMS_CONFIG = '[]';
+            } else {
+                const items = Array.from(document.getElementsByClassName('item-entry')).map((entry, index) => ({
+                    id: (index + 1).toString(),
+                    name: entry.querySelector('.item-name').value,
+                    description: entry.querySelector('.item-description').value,
+                    price: entry.querySelector('.item-price').value,
+                    quantity: entry.querySelector('.item-quantity').value,
+                    image: entry.querySelector('.item-image').value
+                }));
+                formData.ITEMS_CONFIG = JSON.stringify(items);
+                formData.DATES_CONFIG = '[]';
+            }
+
+            return formData;
+        }
+
         async function loadTemplate() {
             try {
                 const response = await fetch('template.html');
@@ -326,62 +412,16 @@
             }
         }
 
-        function collectFormData() {
-            const dates = Array.from(document.getElementsByClassName('date-entry')).map(entry => {
-                const date = entry.querySelector('.date-input').value;
-                const timeSlots = Array.from(entry.querySelectorAll('.time-slot.selected'))
-                    .map(slot => slot.textContent);
-                
-                return {
-                    date,
-                    times: timeSlots
-                };
-            });
-
-            return {
-                FORM_TITLE: document.getElementById('form-title').value,
-                FORM_URL: document.getElementById('form-url').value,
-                NAME_ENTRY: document.getElementById('name-entry').value,
-                TIME_ENTRY: document.getElementById('time-entry').value,
-                SHEETS_URL: document.getElementById('sheets-url').value,
-                DATES_CONFIG: JSON.stringify(dates)
-            };
-        }
-
-        function validateFormUrls() {
-            const formUrl = document.getElementById('form-url').value;
-            const sheetsUrl = document.getElementById('sheets-url').value;
-            
-            let isValid = true;
-            let errorMessage = '';
-
-            if (!formUrl.includes('formResponse')) {
-                errorMessage += 'קישור הטופס חייב להסתיים ב-formResponse\n';
-                isValid = false;
-            }
-
-            if (!sheetsUrl.includes('output=csv')) {
-                errorMessage += 'קישור הגיליון חייב להסתיים ב-?output=csv\n';
-                isValid = false;
-            }
-
-            if (!isValid) {
-                alert(errorMessage);
-            }
-
-            return isValid;
-        }
-
         async function updatePreview() {
-            if (!validateFormUrls()) return;
-
+            fixGoogleUrls();
             const template = await loadTemplate();
             if (!template) return;
 
-            const config = collectFormData();
+            const formData = collectFormData();
             let previewHtml = template;
 
-            Object.entries(config).forEach(([key, value]) => {
+            // החלפת כל הפלייסהולדרים
+            Object.entries(formData).forEach(([key, value]) => {
                 const placeholder = `__${key}__`;
                 previewHtml = previewHtml.replaceAll(placeholder, value);
             });
@@ -392,16 +432,15 @@
 
         document.getElementById('generator-form').onsubmit = async (e) => {
             e.preventDefault();
+            fixGoogleUrls();
             
-            if (!validateFormUrls()) return;
-
             const template = await loadTemplate();
             if (!template) return;
 
-            const config = collectFormData();
+            const formData = collectFormData();
             let finalHtml = template;
 
-            Object.entries(config).forEach(([key, value]) => {
+            Object.entries(formData).forEach(([key, value]) => {
                 const placeholder = `__${key}__`;
                 finalHtml = finalHtml.replaceAll(placeholder, value);
             });
@@ -417,8 +456,16 @@
             URL.revokeObjectURL(url);
         };
 
-        // הוספת תאריך ראשון בטעינת הדף
-        addDate();
+        // הוספת מאזיני אירועים לשינוי קישורים
+        document.getElementById('form-url').addEventListener('change', fixGoogleUrls);
+        document.getElementById('sheets-url').addEventListener('change', fixGoogleUrls);
+
+        // הוספת תאריך/פריט ראשון
+        if (document.getElementById('system-type').value === 'time') {
+            addDate();
+        } else {
+            addItem();
+        }
     </script>
 </body>
 </html>
