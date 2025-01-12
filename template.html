@@ -9,12 +9,13 @@
             --success-color: #4CAF50;
             --warning-color: #ff9800;
             --danger-color: #f44336;
+            --background-color: #f5f5f5;
         }
 
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            background: #f5f5f5;
+            background: var(--background-color);
         }
 
         .container {
@@ -26,8 +27,22 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .date-selector {
+        .form-group {
             margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
         }
 
         .time-grid {
@@ -37,29 +52,48 @@
             margin-top: 20px;
         }
 
-        .time-slot {
-            padding: 15px;
-            border-radius: 4px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background-color: var(--primary-color);
-            color: white;
+        .slot-wrapper {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s;
         }
 
-        .time-slot:hover:not(.booked):not(.pending) {
+        .slot-header {
+            padding: 8px;
+            background: var(--primary-color);
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .slot-body {
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .slot-wrapper.available:hover {
             transform: translateY(-2px);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .time-slot.booked {
-            background-color: var(--danger-color);
+        .slot-wrapper.booked {
+            background: #ffebee;
             cursor: not-allowed;
         }
 
-        .time-slot.pending {
-            background-color: var(--warning-color);
+        .slot-wrapper.booked .slot-header {
+            background: var(--danger-color);
+        }
+
+        .slot-wrapper.pending {
+            background: #fff3e0;
             animation: pulse 2s infinite;
+        }
+
+        .slot-wrapper.pending .slot-header {
+            background: var(--warning-color);
         }
 
         @keyframes pulse {
@@ -74,8 +108,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            padding: 20px;
             background: white;
+            padding: 25px;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             z-index: 1000;
@@ -91,42 +125,15 @@
             right: 0;
             bottom: 0;
             background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(2px);
             z-index: 999;
         }
 
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-
-        .status {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 4px;
-            display: none;
-        }
-
-        .error {
-            background-color: #ffebee;
-            color: var(--danger-color);
-        }
-
-        .success {
-            background-color: #e8f5e9;
-            color: var(--success-color);
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
         }
 
         button {
@@ -135,22 +142,46 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
-            transition: all 0.3s;
+            transition: all 0.2s;
         }
 
-        .submit-btn {
-            background-color: var(--success-color);
+        button:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .primary-button {
+            background: var(--primary-color);
             color: white;
         }
 
-        .cancel-btn {
-            background-color: var(--danger-color);
+        .danger-button {
+            background: var(--danger-color);
             color: white;
         }
 
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .booker-info {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -158,13 +189,11 @@
     <div class="container">
         <h1>__FORM_TITLE__</h1>
         
-        <div class="date-selector">
-            <div class="form-group">
-                <label for="date-select">בחר תאריך:</label>
-                <select id="date-select" onchange="scheduler.loadTimes()">
-                    <option value="">בחר תאריך</option>
-                </select>
-            </div>
+        <div class="form-group">
+            <label for="date-select">בחר תאריך:</label>
+            <select id="date-select" onchange="scheduler.loadTimes()">
+                <option value="">בחר תאריך</option>
+            </select>
         </div>
 
         <div class="time-grid" id="time-slots"></div>
@@ -185,19 +214,19 @@
             <input type="hidden" id="selected-date">
             <input type="hidden" id="selected-time">
             <div id="status-message" class="status"></div>
-            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-                <button type="button" class="cancel-btn" onclick="scheduler.closeModal()">ביטול</button>
-                <button type="submit" class="submit-btn">אישור</button>
+            <div class="button-group">
+                <button type="button" class="danger-button" onclick="scheduler.closeModal()">ביטול</button>
+                <button type="submit" class="primary-button">אישור</button>
             </div>
         </form>
     </div>
 
     <script>
         const CONFIG = {
-            FORM_URL: "__FORM_URL__",
-            SHEETS_URL: "__SHEETS_URL__",
-            NAME_ENTRY: "__NAME_ENTRY__",
-            TIME_ENTRY: "__TIME_ENTRY__",
+            FORM_URL: '__FORM_URL__',
+            SHEETS_URL: '__SHEETS_URL__',
+            NAME_ENTRY: '__NAME_ENTRY__',
+            TIME_ENTRY: '__TIME_ENTRY__',
             DATES: __DATES_CONFIG__
         };
 
@@ -219,7 +248,8 @@
                 CONFIG.DATES.forEach(dateConfig => {
                     const option = document.createElement('option');
                     option.value = dateConfig.date;
-                    option.textContent = new Date(dateConfig.date).toLocaleDateString('he-IL', {
+                    const date = new Date(dateConfig.date);
+                    option.textContent = date.toLocaleDateString('he-IL', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
@@ -234,13 +264,20 @@
 
                 try {
                     const response = await fetch(CONFIG.SHEETS_URL + '?t=' + Date.now(), {
-                        cache: 'no-store'
+                        headers: {
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache'
+                        }
                     });
+
+                    if (!response.ok) throw new Error('Failed to load bookings');
+
                     const data = await response.text();
                     this.parseBookings(data);
                     this.renderTimeSlots();
                 } catch (error) {
                     console.error('Error loading bookings:', error);
+                    this.showStatus('שגיאה בטעינת הנתונים', 'error');
                 }
             },
 
@@ -249,12 +286,12 @@
                 const lines = csvData.split('\n');
                 if (lines.length > 1) {
                     const headers = lines[0].split(',').map(h => h.trim());
-                    const dateTimeIndex = headers.indexOf('תאריך ושעה');
                     const nameIndex = headers.indexOf('שם מלא');
+                    const dateTimeIndex = headers.indexOf('תאריך ושעה');
 
                     for (let i = 1; i < lines.length; i++) {
                         const columns = lines[i].split(',').map(col => col.trim());
-                        if (columns.length >= Math.max(dateTimeIndex, nameIndex) + 1) {
+                        if (columns.length >= Math.max(nameIndex, dateTimeIndex) + 1) {
                             const [date, time] = columns[dateTimeIndex].split(' ');
                             if (date === this.selectedDate) {
                                 this.bookedSlots.set(time, columns[nameIndex]);
@@ -270,7 +307,6 @@
                     document.getElementById('time-slots').innerHTML = '';
                     return;
                 }
-                
                 this.loadBookings();
             },
 
@@ -284,21 +320,35 @@
                 if (!dateConfig) return;
 
                 dateConfig.times.forEach(time => {
-                    const slot = document.createElement('div');
-                    slot.className = 'time-slot';
-                    slot.textContent = time;
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'slot-wrapper';
+                    
+                    const header = document.createElement('div');
+                    header.className = 'slot-header';
+                    header.textContent = time;
+
+                    const body = document.createElement('div');
+                    body.className = 'slot-body';
 
                     if (this.bookedSlots.has(time)) {
-                        slot.className += ' booked';
-                        slot.title = `תפוס - ${this.bookedSlots.get(time)}`;
+                        wrapper.className += ' booked';
+                        const bookerName = this.bookedSlots.get(time);
+                        body.innerHTML = `
+                            <div>תפוס</div>
+                            <div class="booker-info">ע"י: ${bookerName}</div>
+                        `;
                     } else if (this.pendingSlots.has(time)) {
-                        slot.className += ' pending';
-                        slot.title = 'ממתין לאישור';
+                        wrapper.className += ' pending';
+                        body.textContent = 'ממתין לאישור...';
                     } else {
-                        slot.onclick = () => this.openModal(time);
+                        wrapper.className += ' available';
+                        body.textContent = 'פנוי - לחץ להזמנה';
+                        wrapper.onclick = () => this.openModal(time);
                     }
 
-                    container.appendChild(slot);
+                    wrapper.appendChild(header);
+                    wrapper.appendChild(body);
+                    container.appendChild(wrapper);
                 });
             },
 
@@ -316,6 +366,13 @@
                 document.getElementById('booking-modal').style.display = 'none';
             },
 
+            showStatus(message, type) {
+                const status = document.getElementById('status-message');
+                status.textContent = message;
+                status.className = `status ${type}`;
+                status.style.display = 'block';
+            },
+
             setupFormHandler() {
                 document.getElementById('booking-form').onsubmit = async (e) => {
                     e.preventDefault();
@@ -325,7 +382,7 @@
                     const time = document.getElementById('selected-time').value;
 
                     if (this.bookedSlots.has(time) || this.pendingSlots.has(time)) {
-                        this.showStatus('התור כבר נתפס', 'error');
+                        this.showStatus('התור כבר תפוס', 'error');
                         return;
                     }
 
@@ -346,27 +403,21 @@
                         setTimeout(() => {
                             this.pendingSlots.delete(time);
                             this.loadBookings();
-                        }, 300000);
+                        }, 300000); // 5 minutes timeout
 
                         this.closeModal();
                         this.showStatus('התור נקבע בהצלחה!', 'success');
                     } catch (error) {
-                        console.error('Error:', error);
+                        console.error('Error submitting form:', error);
                         this.pendingSlots.delete(time);
                         this.renderTimeSlots();
-                        this.showStatus('אירעה שגיאה בקביעת התור', 'error');
+                        this.showStatus('אירעה שגיאה בשליחת הטופס', 'error');
                     }
                 };
-            },
-
-            showStatus(message, type) {
-                const status = document.getElementById('status-message');
-                status.textContent = message;
-                status.className = `status ${type}`;
-                status.style.display = 'block';
             }
         };
 
+        // Initialize the scheduler
         scheduler.initialize();
     </script>
 </body>
