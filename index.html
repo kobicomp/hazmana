@@ -195,6 +195,7 @@
                 <input type="tel" id="phone" required>
             </div>
             <input type="hidden" id="selected-time">
+            <input type="hidden" id="selected-date">
             <div id="status-message" class="status"></div>
             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
                 <button type="button" onclick="scheduler.closeModal()">ביטול</button>
@@ -266,14 +267,15 @@
                 if (lines.length > 1) {
                     const headers = lines[0].split(',').map(h => h.trim());
                     const nameIndex = headers.indexOf('שם המזמין');
+                    const dateIndex = headers.indexOf('תאריך');
                     const timeIndex = headers.indexOf('שעה');
                     
                     for (let i = 1; i < lines.length; i++) {
                         const columns = lines[i].split(',').map(col => col.trim());
-                        if (columns.length >= Math.max(nameIndex, timeIndex) + 1) {
+                        if (columns.length >= Math.max(nameIndex, dateIndex, timeIndex) + 1) {
                             const name = columns[nameIndex];
+                            const date = columns[dateIndex];
                             const time = columns[timeIndex];
-                            const date = this.formatDate(this.currentDate);
                             const key = `${date}_${time}`;
                             this.bookedSlots.set(key, { name });
                         }
@@ -285,8 +287,8 @@
                 const container = document.getElementById('time-slots');
                 container.innerHTML = '';
 
-                document.getElementById('current-date').textContent = 
-                    this.currentDate.toLocaleDateString('he-IL');
+                const formattedDate = this.currentDate.toLocaleDateString('he-IL');
+                document.getElementById('current-date').textContent = formattedDate;
 
                 // יצירת חלונות זמן
                 for (let hour = CONFIG.START_TIME; hour < CONFIG.END_TIME; hour++) {
@@ -332,6 +334,7 @@
 
             openModal(time) {
                 document.getElementById('selected-time').value = time;
+                document.getElementById('selected-date').value = this.formatDate(this.currentDate);
                 document.getElementById('booking-form').reset();
                 document.getElementById('status-message').textContent = '';
                 document.getElementById('modal-overlay').style.display = 'block';
@@ -348,7 +351,7 @@
                     e.preventDefault();
                     const name = document.getElementById('name').value;
                     const time = document.getElementById('selected-time').value;
-                    const dateStr = this.formatDate(this.currentDate);
+                    const dateStr = document.getElementById('selected-date').value;
                     const key = `${dateStr}_${time}`;
 
                     if (this.bookedSlots.has(key) || this.pendingSlots.has(key)) {
@@ -358,7 +361,7 @@
 
                     const formData = new FormData();
                     formData.append(CONFIG.NAME_ENTRY, name);
-                    formData.append(CONFIG.TIME_ENTRY, time);
+                    formData.append(CONFIG.TIME_ENTRY, `${dateStr} ${time}`);
 
                     try {
                         this.pendingSlots.set(key, { name });
@@ -409,11 +412,13 @@
             previousDay() {
                 this.currentDate.setDate(this.currentDate.getDate() - 1);
                 this.renderTimeSlots();
+                this.loadBookings();
             },
 
             nextDay() {
                 this.currentDate.setDate(this.currentDate.getDate() + 1);
                 this.renderTimeSlots();
+                this.loadBookings();
             }
         };
 
