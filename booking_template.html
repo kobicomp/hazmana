@@ -198,14 +198,14 @@
         // הגדרות המערכת
         const CONFIG = {
             // קישורים ושדות
-            FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfaCO4V343FO1pT8eV_Cd3Qd_qyxuwEId7jHgDj1C1Fjf9X2A/viewform',
+            FORM_URL: 'https://docs.google.com/forms/d/1WWG9G71leoY4LIjuQUk6A3PvVeJiaVLv6prrtUrlDPM/formResponse',
             SHEETS_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTFHOCFxTbFBcGY9y3_AZnuo4klHVrDww-7VkowX4r7XBW7Q9o9te-DKQIZS4L8YBazvXdVEyQF2NAx/pub?output=csv',
             NAME_ENTRY: 'entry.795013979',
             TIME_ENTRY: 'entry.1634119070',
             
             // הגדרות זמנים
-            START_TIME: 16,
-            END_TIME: 20,
+            START_TIME: 08,
+            END_TIME: 09,
             TIME_INTERVAL: 15, // דקות
             
             // זמנים מערכתיים
@@ -345,7 +345,7 @@
                         return;
                     }
 
-                    const formData = new FormData();
+                    const formData = new URLSearchParams();
                     formData.append(CONFIG.NAME_ENTRY, name);
                     formData.append(CONFIG.TIME_ENTRY, `${dateStr} ${time}`);
 
@@ -353,10 +353,12 @@
                         this.pendingSlots.set(key, { name });
                         this.renderTimeSlots();
 
-                        await fetch(CONFIG.FORM_URL, {
+                        const response = await fetch(CONFIG.FORM_URL, {
                             method: 'POST',
                             body: formData,
-                            mode: 'no-cors'
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            }
                         });
 
                         const timeoutId = setTimeout(() => {
