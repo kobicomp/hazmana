@@ -195,10 +195,29 @@
     </div>
 
     <script>
+        // פונקציה להמרת כתובת הטופס
+        function convertFormUrl(url) {
+            // רשימת הסיומות האפשריות להמרה
+            const replacements = ['/preview', '/viewform', '/edit'];
+            
+            // נסה להחליף כל סיומת אפשרית
+            for (let replacement of replacements) {
+                if (url.includes(replacement)) {
+                    return url.replace(replacement, '/formResponse');
+                }
+            }
+            
+            // אם לא נמצאה סיומת מתאימה, נסה להוסיף formResponse
+            // על ידי חיתוך הכתובת לפני החלק האחרון
+            const parts = url.split('/');
+            parts[parts.length - 1] = 'formResponse';
+            return parts.join('/');
+        }
+
         // הגדרות המערכת
         const CONFIG = {
             // קישורים ושדות
-            FORM_URL: 'https://docs.google.com/forms/d/1WWG9G71leoY4LIjuQUk6A3PvVeJiaVLv6prrtUrlDPM/formResponse',
+            FORM_URL: convertFormUrl('https://docs.google.com/forms/d/1WWG9G71leoY4LIjuQUk6A3PvVeJiaVLv6prrtUrlDPM/preview'),
             SHEETS_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTFHOCFxTbFBcGY9y3_AZnuo4klHVrDww-7VkowX4r7XBW7Q9o9te-DKQIZS4L8YBazvXdVEyQF2NAx/pub?output=csv',
             NAME_ENTRY: 'entry.795013979',
             TIME_ENTRY: 'entry.1634119070',
