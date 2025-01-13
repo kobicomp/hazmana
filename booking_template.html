@@ -173,12 +173,6 @@
 </head>
 <body>
     <div class="container">
-        <div class="controls">
-            <button onclick="scheduler.previousDay()">◀ יום קודם</button>
-            <span id="current-date"></span>
-            <button onclick="scheduler.nextDay()">יום הבא ▶</button>
-        </div>
-
         <div class="grid" id="time-slots"></div>
     </div>
 
@@ -189,10 +183,6 @@
             <div class="form-group">
                 <label for="name">שם מלא:</label>
                 <input type="text" id="name" required>
-            </div>
-            <div class="form-group">
-                <label for="phone">טלפון:</label>
-                <input type="tel" id="phone" required>
             </div>
             <input type="hidden" id="selected-time">
             <input type="hidden" id="selected-date">
@@ -208,7 +198,7 @@
         // הגדרות המערכת
         const CONFIG = {
             // קישורים ושדות
-            FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfaCO4V343FO1pT8eV_Cd3Qd_qyxuwEId7jHgDj1C1Fjf9X2A/formResponse',
+            FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfaCO4V343FO1pT8eV_Cd3Qd_qyxuwEId7jHgDj1C1Fjf9X2A/viewform',
             SHEETS_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTFHOCFxTbFBcGY9y3_AZnuo4klHVrDww-7VkowX4r7XBW7Q9o9te-DKQIZS4L8YBazvXdVEyQF2NAx/pub?output=csv',
             NAME_ENTRY: 'entry.795013979',
             TIME_ENTRY: 'entry.1634119070',
@@ -287,9 +277,6 @@
                 const container = document.getElementById('time-slots');
                 container.innerHTML = '';
 
-                const formattedDate = this.currentDate.toLocaleDateString('he-IL');
-                document.getElementById('current-date').textContent = formattedDate;
-
                 // יצירת חלונות זמן
                 for (let hour = CONFIG.START_TIME; hour < CONFIG.END_TIME; hour++) {
                     for (let minute = 0; minute < 60; minute += CONFIG.TIME_INTERVAL) {
@@ -336,7 +323,6 @@
                 document.getElementById('selected-time').value = time;
                 document.getElementById('selected-date').value = this.formatDate(this.currentDate);
                 document.getElementById('booking-form').reset();
-                document.getElementById('status-message').textContent = '';
                 document.getElementById('modal-overlay').style.display = 'block';
                 document.getElementById('booking-modal').style.display = 'block';
             },
@@ -359,7 +345,11 @@
                         return;
                     }
 
-                    const formData = new FormData();
+                    // יצירת כתובת מלאה לשליחת הטופס
+                    const formSubmitUrl = CONFIG.FORM_URL.replace('/viewform', '/formResponse');
+
+                    // יצירת FormData עם השדות הנכונים
+                    const formData = new URLSearchParams();
                     formData.append(CONFIG.NAME_ENTRY, name);
                     formData.append(CONFIG.TIME_ENTRY, `${dateStr} ${time}`);
 
@@ -367,20 +357,27 @@
                         this.pendingSlots.set(key, { name });
                         this.renderTimeSlots();
 
-                        await fetch(CONFIG.FORM_URL, {
+                        const response = await fetch(formSubmitUrl, {
                             method: 'POST',
                             body: formData,
-                            mode: 'no-cors'
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            }
                         });
 
-                        const timeoutId = setTimeout(() => {
-                            this.pendingSlots.delete(key);
-                            this.timeoutIds.delete(key);
-                            this.renderTimeSlots();
-                        }, CONFIG.PENDING_TIMEOUT);
+                        if (response.ok) {
+                            const timeoutId = setTimeout(() => {
+                                this.pendingSlots.delete(key);
+                                this.timeoutIds.delete(key);
+                                this.renderTimeSlots();
+                            }, CONFIG.PENDING_TIMEOUT);
 
-                        this.timeoutIds.set(key, timeoutId);
-                        this.closeModal();
+                            this.timeoutIds.set(key, timeoutId);
+                            this.closeModal();
+                            alert(CONFIG.SUCCESS_MESSAGE);
+                        } else {
+                            throw new Error('שליחת הטופס נכשלה');
+                        }
                     } catch (error) {
                         console.error('Error:', error);
                         this.pendingSlots.delete(key);
@@ -407,18 +404,6 @@
 
             formatDate(date) {
                 return date.toISOString().split('T')[0];
-            },
-
-            previousDay() {
-                this.currentDate.setDate(this.currentDate.getDate() - 1);
-                this.renderTimeSlots();
-                this.loadBookings();
-            },
-
-            nextDay() {
-                this.currentDate.setDate(this.currentDate.getDate() + 1);
-                this.renderTimeSlots();
-                this.loadBookings();
             }
         };
 
