@@ -345,11 +345,7 @@
                         return;
                     }
 
-                    // יצירת כתובת מלאה לשליחת הטופס
-                    const formSubmitUrl = CONFIG.FORM_URL.replace('/viewform', '/formResponse');
-
-                    // יצירת FormData עם השדות הנכונים
-                    const formData = new URLSearchParams();
+                    const formData = new FormData();
                     formData.append(CONFIG.NAME_ENTRY, name);
                     formData.append(CONFIG.TIME_ENTRY, `${dateStr} ${time}`);
 
@@ -357,27 +353,21 @@
                         this.pendingSlots.set(key, { name });
                         this.renderTimeSlots();
 
-                        const response = await fetch(formSubmitUrl, {
+                        await fetch(CONFIG.FORM_URL, {
                             method: 'POST',
                             body: formData,
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded'
-                            }
+                            mode: 'no-cors'
                         });
 
-                        if (response.ok) {
-                            const timeoutId = setTimeout(() => {
-                                this.pendingSlots.delete(key);
-                                this.timeoutIds.delete(key);
-                                this.renderTimeSlots();
-                            }, CONFIG.PENDING_TIMEOUT);
+                        const timeoutId = setTimeout(() => {
+                            this.pendingSlots.delete(key);
+                            this.timeoutIds.delete(key);
+                            this.renderTimeSlots();
+                        }, CONFIG.PENDING_TIMEOUT);
 
-                            this.timeoutIds.set(key, timeoutId);
-                            this.closeModal();
-                            alert(CONFIG.SUCCESS_MESSAGE);
-                        } else {
-                            throw new Error('שליחת הטופס נכשלה');
-                        }
+                        this.timeoutIds.set(key, timeoutId);
+                        this.closeModal();
+                        alert(CONFIG.SUCCESS_MESSAGE);
                     } catch (error) {
                         console.error('Error:', error);
                         this.pendingSlots.delete(key);
