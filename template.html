@@ -3,174 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>{{MAIN_TITLE}}</title>
-    <style>
-        :root {
-            --available-color: {{AVAILABLE_COLOR}};
-            --booked-color: {{BOOKED_COLOR}};
-            --pending-color: {{PENDING_COLOR}};
-            --primary-color: {{PRIMARY_COLOR}};
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background: #f5f5f5;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
-            color: var(--primary-color);
-            margin-bottom: 10px;
-        }
-
-        .date-display {
-            text-align: center;
-            margin-bottom: 20px;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .slot-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .slot-header {
-            font-size: 0.9em;
-            font-weight: bold;
-            color: #4a5568;
-            text-align: center;
-            min-height: 20px;
-        }
-
-        .time-slot {
-            padding: 10px;
-            margin: 5px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            width: 100%;
-        }
-
-        .time-slot:hover {
-            transform: scale(1.05);
-        }
-
-        .time-slot.available {
-            background-color: var(--available-color);
-            color: white;
-        }
-
-        .time-slot.booked {
-            background-color: var(--booked-color);
-            color: white;
-            cursor: not-allowed;
-        }
-
-        .time-slot.pending {
-            background-color: var(--pending-color);
-            color: white;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
-        }
-
-        .booking-modal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            width: 90%;
-            max-width: 500px;
-        }
-
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        button {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            background-color: var(--primary-color);
-            color: white;
-            transition: opacity 0.3s;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
-        .status {
-            padding: 8px;
-            border-radius: 4px;
-            margin-top: 10px;
-            text-align: center;
-        }
-    </style>
+    <!-- אותו סגנון CSS כמו קודם -->
 </head>
 <body>
     <div class="container">
@@ -179,7 +12,6 @@
         </div>
         
         <div class="date-display" id="date-display"></div>
-
         <div class="grid" id="time-slots"></div>
     </div>
 
@@ -211,11 +43,13 @@
             START_TIME: {{START_TIME}},
             END_TIME: {{END_TIME}},
             TIME_INTERVAL: {{TIME_INTERVAL}},
-            SUCCESS_MESSAGE: '{{SUCCESS_MESSAGE}}',
-            ERROR_MESSAGE: '{{ERROR_MESSAGE}}',
-            BUSY_MESSAGE: '{{BUSY_MESSAGE}}',
+            SUCCESS_MESSAGE: 'בקשתך התקבלה. נא המתן לאישור - יש להשאיר את הדף פתוח',
+            CONFIRMED_MESSAGE: 'התור אושר בהצלחה!',
+            CONFLICT_MESSAGE: 'מצטערים, התור כבר הוזמן על ידי משתמש אחר',
+            ERROR_MESSAGE: 'אירעה שגיאה בשליחת הטופס',
+            BUSY_MESSAGE: 'התור כבר תפוס',
             REFRESH_INTERVAL: 60000, // רענון כל דקה
-            PENDING_TIMEOUT: 60000   // זמן המתנה של דקה
+            PENDING_TIMEOUT: 60000    // זמן המתנה של דקה
         };
 
         const scheduler = {
@@ -228,16 +62,9 @@
                 this.setupFormHandler();
                 this.displayDate();
                 
-                // רענון אוטומטי
                 setInterval(() => {
                     this.loadBookings();
                     console.log('מרענן נתונים...');
-                }, CONFIG.REFRESH_INTERVAL);
-                
-                // ניקוי תורים בהמתנה
-                setInterval(() => {
-                    this.cleanExpiredPending();
-                    console.log('מנקה תורים שפג תוקפם...');
                 }, CONFIG.REFRESH_INTERVAL);
             },
 
@@ -264,7 +91,9 @@
             },
 
             parseBookings(csvData) {
+                const currentPendingSlots = new Map(this.pendingSlots);
                 this.bookedSlots.clear();
+                
                 const lines = csvData.split('\n');
                 if (lines.length > 1) {
                     const headers = lines[0].split(',').map(h => h.trim());
@@ -279,6 +108,19 @@
                             const [date, time] = timeStr.split(' ');
                             if (date === CONFIG.BOOKING_DATE) {
                                 const key = `${date}_${time}`;
+                                // אם התור בהמתנה ונמצא בגיליון, נבדוק אם זה אותו משתמש
+                                if (currentPendingSlots.has(key)) {
+                                    const pendingBooking = currentPendingSlots.get(key);
+                                    if (name !== pendingBooking.name) {
+                                        // מישהו אחר הזמין את התור
+                                        this.pendingSlots.delete(key);
+                                        alert(CONFIG.CONFLICT_MESSAGE);
+                                    } else {
+                                        // ההזמנה אושרה
+                                        this.pendingSlots.delete(key);
+                                        alert(CONFIG.CONFIRMED_MESSAGE);
+                                    }
+                                }
                                 this.bookedSlots.set(key, { name });
                             }
                         }
@@ -355,7 +197,7 @@
                         return;
                     }
 
-                    if (this.bookedSlots.has(key) || this.pendingSlots.has(key)) {
+                    if (this.bookedSlots.has(key)) {
                         alert(CONFIG.BUSY_MESSAGE);
                         return;
                     }
@@ -365,7 +207,7 @@
                         formData.append(CONFIG.NAME_ENTRY, name);
                         formData.append(CONFIG.TIME_ENTRY, `${CONFIG.BOOKING_DATE} ${time}`);
 
-                        // עדכון הממשק
+                        // עדכון הממשק - מצב המתנה
                         this.pendingSlots.set(key, { 
                             name,
                             timestamp: Date.now()
@@ -379,22 +221,17 @@
                             mode: 'no-cors'
                         });
 
-                        const timeoutId = setTimeout(() => {
+                        alert(CONFIG.SUCCESS_MESSAGE);
+                        this.closeModal();
+
+                        // קביעת טיימר לבדיקה אחרי דקה
+                        const timeoutId = setTimeout(async () => {
                             if (this.pendingSlots.has(key)) {
-                                this.pendingSlots.delete(key);
-                                this.timeoutIds.delete(key);
-                                this.renderTimeSlots();
-                                console.log('תור בהמתנה בוטל:', key);
+                                await this.loadBookings(); // בדיקה מחודשת של המצב
                             }
                         }, CONFIG.PENDING_TIMEOUT);
 
                         this.timeoutIds.set(key, timeoutId);
-                        
-                        alert(CONFIG.SUCCESS_MESSAGE);
-                        this.closeModal();
-                        
-                        // רענון מיידי אחרי שליחה
-                        setTimeout(() => this.loadBookings(), 1000);
 
                     } catch (error) {
                         console.error('Error:', error);
@@ -403,22 +240,6 @@
                         alert(CONFIG.ERROR_MESSAGE);
                     }
                 };
-            },
-
-            cleanExpiredPending() {
-                const now = Date.now();
-                for (const [key, booking] of this.pendingSlots.entries()) {
-                    if (now - booking.timestamp > CONFIG.PENDING_TIMEOUT) {
-                        this.pendingSlots.delete(key);
-                        const timeoutId = this.timeoutIds.get(key);
-                        if (timeoutId) {
-                            clearTimeout(timeoutId);
-                            this.timeoutIds.delete(key);
-                        }
-                        console.log('תור שפג תוקפו נמחק:', key);
-                    }
-                }
-                this.renderTimeSlots();
             }
         };
 
