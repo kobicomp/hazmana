@@ -2,13 +2,13 @@
 <html dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>{{TITLE}}</title>
+    <title>מערכת הזמנת תורים</title>
     <style>
         :root {
-            --available-color: {{AVAILABLE_COLOR}};
-            --booked-color: {{BOOKED_COLOR}};
-            --pending-color: {{PENDING_COLOR}};
-            --primary-color: {{PRIMARY_COLOR}};
+            --available-color: #10B981;
+            --booked-color: #EF4444;
+            --pending-color: #F59E0B;
+            --primary-color: #2196F3;
         }
 
         body {
@@ -24,11 +24,6 @@
             background: white;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
         }
 
         .controls {
@@ -179,8 +174,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>{{BUSINESS_NAME}}</h1>
-            <p>{{BUSINESS_DESCRIPTION}}</p>
+            <h1>מערכת הזמנת תורים</h1>
         </div>
         
         <div class="controls">
@@ -194,13 +188,18 @@
 
     <div class="modal-overlay" id="modal-overlay"></div>
     <div class="booking-modal" id="booking-modal">
-        <h2>{{BOOKING_TITLE}}</h2>
+        <h2>הזמנת תור</h2>
         <form id="booking-form">
             <div class="form-group">
-                <label for="name">{{NAME_LABEL}}</label>
+                <label for="name">שם מלא:</label>
                 <input type="text" id="name" required>
             </div>
+            <div class="form-group">
+                <label for="phone">טלפון:</label>
+                <input type="tel" id="phone" required>
+            </div>
             <input type="hidden" id="selected-time">
+            <input type="hidden" id="selected-date">
             <div id="status-message" class="status"></div>
             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
                 <button type="button" onclick="scheduler.closeModal()">ביטול</button>
@@ -211,16 +210,16 @@
 
     <script>
         const CONFIG = {
-            FORM_URL: '{{FORM_URL}}',
-            SHEETS_URL: '{{SHEETS_URL}}',
-            NAME_ENTRY: '{{NAME_ENTRY}}',
-            TIME_ENTRY: '{{TIME_ENTRY}}',
-            START_TIME: {{START_TIME}},
-            END_TIME: {{END_TIME}},
-            TIME_INTERVAL: {{TIME_INTERVAL}},
-            SUCCESS_MESSAGE: '{{SUCCESS_MESSAGE}}',
-            ERROR_MESSAGE: '{{ERROR_MESSAGE}}',
-            BUSY_MESSAGE: '{{BUSY_MESSAGE}}'
+            FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSfaCO4V343FO1pT8eV_Cd3Qd_qyxuwEId7jHgDj1C1Fjf9X2A/formResponse',
+            SHEETS_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTFHOCFxTbFBcGY9y3_AZnuo4klHVrDww-7VkowX4r7XBW7Q9o9te-DKQIZS4L8YBazvXdVEyQF2NAx/pub?output=csv',
+            NAME_ENTRY: 'entry.795013979',
+            TIME_ENTRY: 'entry.1634119070',
+            START_TIME: 16,
+            END_TIME: 20,
+            TIME_INTERVAL: 15,
+            SUCCESS_MESSAGE: 'התור נקבע בהצלחה!',
+            ERROR_MESSAGE: 'אירעה שגיאה בשליחת הטופס',
+            BUSY_MESSAGE: 'התור כבר תפוס'
         };
 
         const scheduler = {
@@ -230,7 +229,6 @@
             timeoutIds: new Map(),
 
             initialize() {
-                console.log('מאתחל את המערכת...');
                 this.loadBookings();
                 this.setupFormHandler();
                 setInterval(() => this.loadBookings(), 30000);
@@ -238,7 +236,6 @@
             },
 
             async loadBookings() {
-                console.log('טוען הזמנות קיימות...');
                 try {
                     const response = await fetch(CONFIG.SHEETS_URL + '&t=' + Date.now(), {
                         headers: {
@@ -250,7 +247,7 @@
                     this.parseBookings(data);
                     this.renderTimeSlots();
                 } catch (error) {
-                    console.error('שגיאה בטעינת הזמנות:', error);
+                    console.error('Error loading bookings:', error);
                 }
             },
 
@@ -325,6 +322,7 @@
 
             openModal(time) {
                 document.getElementById('selected-time').value = time;
+                document.getElementById('selected-date').value = this.formatDate(this.currentDate);
                 document.getElementById('booking-form').reset();
                 document.getElementById('status-message').textContent = '';
                 document.getElementById('modal-overlay').style.display = 'block';
@@ -336,49 +334,58 @@
                 document.getElementById('booking-modal').style.display = 'none';
             },
 
-          setupFormHandler() {
-    document.getElementById('booking-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('name').value;
-        const time = document.getElementById('selected-time').value;
-        const dateStr = document.getElementById('selected-date').value;
-        const key = `${dateStr}_${time}`;
+            setupFormHandler() {
+                document.getElementById('booking-form').onsubmit = async (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById('name').value;
+                    const phone = document.getElementById('phone').value;
+                    const time = document.getElementById('selected-time').value;
+                    const dateStr = document.getElementById('selected-date').value;
+                    const key = `${dateStr}_${time}`;
 
-        if (this.bookedSlots.has(key) || this.pendingSlots.has(key)) {
-            alert(CONFIG.BUSY_MESSAGE);
-            return;
-        }
+                    if (this.bookedSlots.has(key) || this.pendingSlots.has(key)) {
+                        alert(CONFIG.BUSY_MESSAGE);
+                        return;
+                    }
 
-        const formData = new FormData();
-        formData.append(CONFIG.NAME_ENTRY, name);
-        formData.append(CONFIG.TIME_ENTRY, `${dateStr} ${time}`);
+                    try {
+                        const formData = new FormData();
+                        formData.append(CONFIG.NAME_ENTRY, name);
+                        formData.append(CONFIG.TIME_ENTRY, `${dateStr} ${time}`);
 
-        try {
-            this.pendingSlots.set(key, { name });
-            this.renderTimeSlots();
+                        // עדכון הממשק לפני השליחה
+                        this.pendingSlots.set(key, { name });
+                        this.renderTimeSlots();
 
-            await fetch(CONFIG.FORM_URL, {
-                method: 'POST',
-                body: formData,
-                mode: 'no-cors'
-            });
+                        // שליחת הטופס
+                        await fetch(CONFIG.FORM_URL, {
+                            method: 'POST',
+                            body: formData,
+                            mode: 'no-cors'
+                        });
 
-            const timeoutId = setTimeout(() => {
-                this.pendingSlots.delete(key);
-                this.timeoutIds.delete(key);
-                this.renderTimeSlots();
-            }, CONFIG.PENDING_TIMEOUT);
+                        // ניהול טיימר לפקיעת תוקף
+                        const timeoutId = setTimeout(() => {
+                            this.pendingSlots.delete(key);
+                            this.timeoutIds.delete(key);
+                            this.renderTimeSlots();
+                        }, 300000);
 
-            this.timeoutIds.set(key, timeoutId);
-            this.closeModal();
-        } catch (error) {
-            console.error('Error:', error);
-            this.pendingSlots.delete(key);
-            this.renderTimeSlots();
-            alert(CONFIG.ERROR_MESSAGE);
-        }
-    };
-},
+                        this.timeoutIds.set(key, timeoutId);
+                        
+                        // סגירת המודל והצגת הודעת הצלחה
+                        alert(CONFIG.SUCCESS_MESSAGE);
+                        this.closeModal();
+
+                    } catch (error) {
+                        console.error('Error:', error);
+                        this.pendingSlots.delete(key);
+                        this.renderTimeSlots();
+                        alert(CONFIG.ERROR_MESSAGE);
+                    }
+                };
+            },
+
             cleanExpiredPending() {
                 const now = Date.now();
                 for (const [key, booking] of this.pendingSlots.entries()) {
@@ -386,7 +393,7 @@
                         this.pendingSlots.delete(key);
                         const timeoutId = this.timeoutIds.get(key);
                         if (timeoutId) {
-                           clearTimeout(timeoutId);
+                            clearTimeout(timeoutId);
                             this.timeoutIds.delete(key);
                         }
                     }
@@ -395,26 +402,20 @@
             },
 
             formatDate(date) {
-                const year = date.getFullYear();
-                const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                const day = date.getDate().toString().padStart(2, '0');
-                return `${year}-${month}-${day}`;
+                return date.toISOString().split('T')[0];
             },
 
             previousDay() {
-                console.log('מעבר ליום הקודם');
                 this.currentDate.setDate(this.currentDate.getDate() - 1);
                 this.renderTimeSlots();
             },
 
             nextDay() {
-                console.log('מעבר ליום הבא');
                 this.currentDate.setDate(this.currentDate.getDate() + 1);
                 this.renderTimeSlots();
             }
         };
 
-        // אתחול המערכת
         scheduler.initialize();
     </script>
 </body>
