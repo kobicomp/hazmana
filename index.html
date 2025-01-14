@@ -118,7 +118,6 @@
             background: #fff;
             border-radius: 4px;
             border: 1px solid #ddd;
-            margin-top: -1px;
         }
 
         .preview-tab.active {
@@ -166,6 +165,12 @@
             background: #f8d7da;
             color: #721c24;
         }
+
+        .helper-text {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -186,6 +191,7 @@
                 <div class="form-group">
                     <label>תאריך הזמנות</label>
                     <input type="date" id="bookingDate" required>
+                    <div class="helper-text">התאריך שעבורו ניתן לקבוע תורים</div>
                 </div>
                 <div class="grid">
                     <div class="form-group">
@@ -209,18 +215,14 @@
                     <label>כתובת הטופס (URL)</label>
                     <input type="url" id="formUrl" required 
                            placeholder="https://docs.google.com/forms/d/e/...">
-                    <small style="color: #666; margin-top: 5px; display: block;">
-                        * הכנס את כתובת הטופס מ-Google Forms
-                    </small>
+                    <div class="helper-text">הכנס את כתובת הטופס של Google Forms</div>
                 </div>
 
                 <div class="form-group">
                     <label>כתובת הגיליון (URL)</label>
                     <input type="url" id="sheetsUrl" required
                            placeholder="https://docs.google.com/spreadsheets/d/e/...">
-                    <small style="color: #666; margin-top: 5px; display: block;">
-                        * הכנס את כתובת הגיליון שפורסם כ-CSV
-                    </small>
+                    <div class="helper-text">כתובת הגיליון שפורסם כ-CSV</div>
                 </div>
 
                 <div class="grid">
@@ -380,10 +382,7 @@
                     '{{AVAILABLE_COLOR}}': document.getElementById('availableColor').value,
                     '{{BOOKED_COLOR}}': document.getElementById('bookedColor').value,
                     '{{PENDING_COLOR}}': document.getElementById('pendingColor').value,
-                    '{{PRIMARY_COLOR}}': document.getElementById('primaryColor').value,
-                    '{{SUCCESS_MESSAGE}}': 'התור נקבע בהצלחה!',
-                    '{{ERROR_MESSAGE}}': 'אירעה שגיאה בשליחת הטופס',
-                    '{{BUSY_MESSAGE}}': 'התור כבר תפוס'
+                    '{{PRIMARY_COLOR}}': document.getElementById('primaryColor').value
                 };
 
                 for (const [key, value] of Object.entries(replacements)) {
@@ -405,9 +404,24 @@
             }
         };
 
-        // קביעת תאריך מינימלי להיום
+        // הגדרת תאריך מינימלי להיום
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('bookingDate').min = today;
+
+        // טיפול בשינוי שעת התחלה/סיום
+        document.getElementById('startTime').addEventListener('change', function() {
+            const endTime = document.getElementById('endTime');
+            if (parseInt(this.value) >= parseInt(endTime.value)) {
+                endTime.value = parseInt(this.value) + 1;
+            }
+        });
+
+        document.getElementById('endTime').addEventListener('change', function() {
+            const startTime = document.getElementById('startTime');
+            if (parseInt(this.value) <= parseInt(startTime.value)) {
+                startTime.value = parseInt(this.value) - 1;
+            }
+        });
     </script>
 </body>
 </html>
