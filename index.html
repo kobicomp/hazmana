@@ -237,19 +237,20 @@
             e.preventDefault();
             
             try {
-                // בדיקה והוספת סיומות לקישורים
-                let formUrl = document.getElementById('formUrl').value;
-                let sheetsUrl = document.getElementById('sheetsUrl').value;
+                // ניקוי והוספת סיומות לקישורים
+                let formUrl = document.getElementById('formUrl').value.trim();
+                let sheetsUrl = document.getElementById('sheetsUrl').value.trim();
 
-                // הוספת /formResponse לקישור הטופס אם חסר
+                // טיפול בקישור הטופס
+                formUrl = formUrl.replace(/\/edit$|\/viewform$|\/edit\?.*$|\/viewform\?.*$/, '');
                 if (!formUrl.endsWith('/formResponse')) {
                     formUrl = formUrl.endsWith('/') ? formUrl + 'formResponse' : formUrl + '/formResponse';
                 }
 
-                // הוספת ?output=csv לקישור הגיליון אם חסר
-                if (!sheetsUrl.includes('?output=csv')) {
-                    sheetsUrl = sheetsUrl.includes('?') ? sheetsUrl + '&output=csv' : sheetsUrl + '?output=csv';
-                }
+                // טיפול בקישור הגיליון
+                sheetsUrl = sheetsUrl.replace(/\?.*$/, ''); // מסיר כל פרמטר קיים
+                sheetsUrl = sheetsUrl.replace(/\/edit$|\/view$|\/copy$/, ''); // מסיר סיומות לא רצויות
+                sheetsUrl = sheetsUrl.includes('?') ? sheetsUrl + '&output=csv' : sheetsUrl + '?output=csv';
 
                 // קריאה לקובץ התבנית
                 const response = await fetch('template.html');
