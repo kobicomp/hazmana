@@ -31,11 +31,6 @@
             margin-bottom: 30px;
         }
 
-        .header h1 {
-            color: var(--primary-color);
-            margin-bottom: 10px;
-        }
-
         .date-display {
             text-align: center;
             margin-bottom: 20px;
@@ -179,6 +174,7 @@
         </div>
         
         <div class="date-display" id="date-display"></div>
+
         <div class="grid" id="time-slots"></div>
     </div>
 
@@ -211,12 +207,8 @@
             END_TIME: {{END_TIME}},
             TIME_INTERVAL: {{TIME_INTERVAL}},
             SUCCESS_MESSAGE: 'בקשתך התקבלה. נא המתן לאישור - יש להשאיר את הדף פתוח',
-            CONFIRMED_MESSAGE: 'התור אושר בהצלחה!',
-            CONFLICT_MESSAGE: 'מצטערים, התור כבר הוזמן על ידי משתמש אחר',
             ERROR_MESSAGE: 'אירעה שגיאה בשליחת הטופס',
-            BUSY_MESSAGE: 'התור כבר תפוס',
-            REFRESH_INTERVAL: 60000,  // רענון כל דקה
-            PENDING_TIMEOUT: 60000     // זמן המתנה של דקה
+            BUSY_MESSAGE: 'התור כבר תפוס'
         };
 
         const scheduler = {
@@ -228,11 +220,8 @@
                 this.loadBookings();
                 this.setupFormHandler();
                 this.displayDate();
-                
-                // רענון אוטומטי
-                setInterval(() => {
-                    this.loadBookings();
-                }, CONFIG.REFRESH_INTERVAL);
+                setInterval(() => this.loadBookings(), 30000);
+                setInterval(() => this.cleanExpiredPending(), 30000);
             },
 
             displayDate() {
@@ -258,9 +247,7 @@
             },
 
             parseBookings(csvData) {
-                const currentPendingSlots = new Map(this.pendingSlots);
                 this.bookedSlots.clear();
-                
                 const lines = csvData.split('\n');
                 if (lines.length > 1) {
                     const headers = lines[0].split(',').map(h => h.trim());
@@ -275,21 +262,6 @@
                             const [date, time] = timeStr.split(' ');
                             if (date === CONFIG.BOOKING_DATE) {
                                 const key = `${date}_${time}`;
-                                
-                                // בדיקת תורים בהמתנה
-                                if (currentPendingSlots.has(key)) {
-                                    const pendingBooking = currentPendingSlots.get(key);
-                                    if (name !== pendingBooking.name) {
-                                        // מישהו אחר הזמין את התור
-                                        this.pendingSlots.delete(key);
-                                        alert(CONFIG.CONFLICT_MESSAGE);
-                                    } else {
-                                        // ההזמנה אושרה
-                                        this.pendingSlots.delete(key);
-                                        alert(CONFIG.CONFIRMED_MESSAGE);
-                                    }
-                                }
-                                
                                 this.bookedSlots.set(key, { name });
                             }
                         }
@@ -376,11 +348,8 @@
                         formData.append(CONFIG.NAME_ENTRY, name);
                         formData.append(CONFIG.TIME_ENTRY, `${CONFIG.BOOKING_DATE} ${time}`);
 
-                        // עדכון הממשק - מצב המתנה
-                        this.pendingSlots.set(key, { 
-                            name,
-                            timestamp: Date.now()
-                        });
+                        // עדכון הממשק
+                        this.pendingSlots.set(key, { name });
                         this.renderTimeSlots();
 
                         // שליחת הטופס
@@ -390,17 +359,16 @@
                             mode: 'no-cors'
                         });
 
-                        alert(CONFIG.SUCCESS_MESSAGE);
-                        this.closeModal();
-
-                        // קביעת טיימר לבדיקה אחרי דקה
-                        const timeoutId = setTimeout(async () => {
-                            if (this.pendingSlots.has(key)) {
-                                await this.loadBookings(); // בדיקה מחודשת של המצב
-                            }
-                        }, CONFIG.PENDING_TIMEOUT);
+                        const timeoutId = setTimeout(() => {
+                            this.pendingSlots.delete(key);
+                            this.timeoutIds.delete(key);
+                            this.renderTimeSlots();
+                        }, 30000);
 
                         this.timeoutIds.set(key, timeoutId);
+                        
+                        alert(CONFIG.SUCCESS_MESSAGE);
+                        this.closeModal();
 
                     } catch (error) {
                         console.error('Error:', error);
@@ -409,6 +377,21 @@
                         alert(CONFIG.ERROR_MESSAGE);
                     }
                 };
+            },
+
+            cleanExpiredPending() {
+                const now = Date.now();
+                for (const [key, booking] of this.pendingSlots.entries()) {
+                    if (now - booking.timestamp > 30000) {
+                        this.pendingSlots.delete(key);
+                        const timeoutId = this.timeoutIds.get(key);
+                        if (timeoutId) {
+                            clearTimeout(timeoutId);
+                            this.timeoutIds.delete(key);
+                        }
+                    }
+                }
+                this.renderTimeSlots();
             }
         };
 
