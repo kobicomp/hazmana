@@ -213,7 +213,9 @@
             TIME_INTERVAL: {{TIME_INTERVAL}},
             SUCCESS_MESSAGE: '{{SUCCESS_MESSAGE}}',
             ERROR_MESSAGE: '{{ERROR_MESSAGE}}',
-            BUSY_MESSAGE: '{{BUSY_MESSAGE}}'
+            BUSY_MESSAGE: '{{BUSY_MESSAGE}}',
+            REFRESH_INTERVAL: 60000, // רענון כל דקה
+            PENDING_TIMEOUT: 60000   // זמן המתנה של דקה
         };
 
         const scheduler = {
@@ -225,8 +227,18 @@
                 this.loadBookings();
                 this.setupFormHandler();
                 this.displayDate();
-                setInterval(() => this.loadBookings(), 30000);
-                setInterval(() => this.cleanExpiredPending(), 30000);
+                
+                // רענון אוטומטי
+                setInterval(() => {
+                    this.loadBookings();
+                    console.log('מרענן נתונים...');
+                }, CONFIG.REFRESH_INTERVAL);
+                
+                // ניקוי תורים בהמתנה
+                setInterval(() => {
+                    this.cleanExpiredPending();
+                    console.log('מנקה תורים שפג תוקפם...');
+                }, CONFIG.REFRESH_INTERVAL);
             },
 
             displayDate() {
@@ -354,7 +366,10 @@
                         formData.append(CONFIG.TIME_ENTRY, `${CONFIG.BOOKING_DATE} ${time}`);
 
                         // עדכון הממשק
-                        this.pendingSlots.set(key, { name });
+                        this.pendingSlots.set(key, { 
+                            name,
+                            timestamp: Date.now()
+                        });
                         this.renderTimeSlots();
 
                         // שליחת הטופס
@@ -365,15 +380,21 @@
                         });
 
                         const timeoutId = setTimeout(() => {
-                            this.pendingSlots.delete(key);
-                            this.timeoutIds.delete(key);
-                            this.renderTimeSlots();
-                        }, 300000);
+                            if (this.pendingSlots.has(key)) {
+                                this.pendingSlots.delete(key);
+                                this.timeoutIds.delete(key);
+                                this.renderTimeSlots();
+                                console.log('תור בהמתנה בוטל:', key);
+                            }
+                        }, CONFIG.PENDING_TIMEOUT);
 
                         this.timeoutIds.set(key, timeoutId);
                         
                         alert(CONFIG.SUCCESS_MESSAGE);
                         this.closeModal();
+                        
+                        // רענון מיידי אחרי שליחה
+                        setTimeout(() => this.loadBookings(), 1000);
 
                     } catch (error) {
                         console.error('Error:', error);
@@ -387,13 +408,14 @@
             cleanExpiredPending() {
                 const now = Date.now();
                 for (const [key, booking] of this.pendingSlots.entries()) {
-                    if (now - booking.timestamp > 300000) {
+                    if (now - booking.timestamp > CONFIG.PENDING_TIMEOUT) {
                         this.pendingSlots.delete(key);
                         const timeoutId = this.timeoutIds.get(key);
                         if (timeoutId) {
                             clearTimeout(timeoutId);
                             this.timeoutIds.delete(key);
                         }
+                        console.log('תור שפג תוקפו נמחק:', key);
                     }
                 }
                 this.renderTimeSlots();
