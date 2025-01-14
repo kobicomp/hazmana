@@ -320,71 +320,84 @@
                 }
             },
 
-            openModal(time) {
-                document.getElementById('selected-time').value = time;
-                document.getElementById('selected-date').value = this.formatDate(this.currentDate);
-                document.getElementById('booking-form').reset();
-                document.getElementById('status-message').textContent = '';
-                document.getElementById('modal-overlay').style.display = 'block';
-                document.getElementById('booking-modal').style.display = 'block';
-            },
+           openModal(time) {
+    // קודם נאפס את הטופס
+    document.getElementById('booking-form').reset();
+    
+    // נגדיר את התאריך והשעה
+    document.getElementById('selected-time').value = time;
+    document.getElementById('selected-date').value = this.formatDate(this.currentDate);
+    
+    // נאפס את הודעת הסטטוס
+    document.getElementById('status-message').textContent = '';
+    
+    // נציג את המודל
+    document.getElementById('modal-overlay').style.display = 'block';
+    document.getElementById('booking-modal').style.display = 'block';
+},
 
             closeModal() {
                 document.getElementById('modal-overlay').style.display = 'none';
                 document.getElementById('booking-modal').style.display = 'none';
             },
 
-            setupFormHandler() {
-                document.getElementById('booking-form').onsubmit = async (e) => {
-                    e.preventDefault();
-                    const name = document.getElementById('name').value;
-                    const phone = document.getElementById('phone').value;
-                    const time = document.getElementById('selected-time').value;
-                    const dateStr = document.getElementById('selected-date').value;
-                    const key = `${dateStr}_${time}`;
+           setupFormHandler() {
+    document.getElementById('booking-form').onsubmit = async (e) => {
+        e.preventDefault();
+        
+        // קבלת הערכים מהטופס
+        const name = document.getElementById('name').value;
+        const time = document.getElementById('selected-time').value;
+        const dateStr = document.getElementById('selected-date').value;
+        const key = `${dateStr}_${time}`;
 
-                    if (this.bookedSlots.has(key) || this.pendingSlots.has(key)) {
-                        alert(CONFIG.BUSY_MESSAGE);
-                        return;
-                    }
+        if (!name || !time || !dateStr) {
+            alert('נא למלא את כל השדות הנדרשים');
+            return;
+        }
 
-                    try {
-                        const formData = new FormData();
-                        formData.append(CONFIG.NAME_ENTRY, name);
-                        formData.append(CONFIG.TIME_ENTRY, `${dateStr} ${time}`);
+        if (this.bookedSlots.has(key) || this.pendingSlots.has(key)) {
+            alert(CONFIG.BUSY_MESSAGE);
+            return;
+        }
 
-                        // עדכון הממשק לפני השליחה
-                        this.pendingSlots.set(key, { name });
-                        this.renderTimeSlots();
+        try {
+            const formData = new FormData();
+            formData.append(CONFIG.NAME_ENTRY, name);
+            formData.append(CONFIG.TIME_ENTRY, `${dateStr} ${time}`);
 
-                        // שליחת הטופס
-                        await fetch(CONFIG.FORM_URL, {
-                            method: 'POST',
-                            body: formData,
-                            mode: 'no-cors'
-                        });
+            // עדכון הממשק לפני השליחה
+            this.pendingSlots.set(key, { name });
+            this.renderTimeSlots();
 
-                        // ניהול טיימר לפקיעת תוקף
-                        const timeoutId = setTimeout(() => {
-                            this.pendingSlots.delete(key);
-                            this.timeoutIds.delete(key);
-                            this.renderTimeSlots();
-                        }, 300000);
+            // שליחת הטופס
+            await fetch(CONFIG.FORM_URL, {
+                method: 'POST',
+                body: formData,
+                mode: 'no-cors'
+            });
 
-                        this.timeoutIds.set(key, timeoutId);
-                        
-                        // סגירת המודל והצגת הודעת הצלחה
-                        alert(CONFIG.SUCCESS_MESSAGE);
-                        this.closeModal();
+            // ניהול טיימר לפקיעת תוקף
+            const timeoutId = setTimeout(() => {
+                this.pendingSlots.delete(key);
+                this.timeoutIds.delete(key);
+                this.renderTimeSlots();
+            }, 300000);
 
-                    } catch (error) {
-                        console.error('Error:', error);
-                        this.pendingSlots.delete(key);
-                        this.renderTimeSlots();
-                        alert(CONFIG.ERROR_MESSAGE);
-                    }
-                };
-            },
+            this.timeoutIds.set(key, timeoutId);
+            
+            // סגירת המודל והצגת הודעת הצלחה
+            alert(CONFIG.SUCCESS_MESSAGE);
+            this.closeModal();
+
+        } catch (error) {
+            console.error('Error:', error);
+            this.pendingSlots.delete(key);
+            this.renderTimeSlots();
+            alert(CONFIG.ERROR_MESSAGE);
+        }
+    };
+},
 
             cleanExpiredPending() {
                 const now = Date.now();
