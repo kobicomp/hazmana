@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>דף ניהול - יצירת מערכת הזמנות</title>
-     <style>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
@@ -53,17 +57,13 @@
         input[type="url"],
         input[type="number"],
         input[type="color"],
+        input[type="date"],
         textarea {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 80px;
         }
 
         .grid {
@@ -75,49 +75,75 @@
         .button-group {
             display: flex;
             gap: 10px;
-            margin-top: 20px;
+            margin: 20px 0;
         }
 
         button {
-            background: #2196F3;
-            color: white;
-            padding: 12px 24px;
+            padding: 8px 16px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
+            background-color: var(--primary-color);
+            color: white;
+            transition: opacity 0.3s;
             flex: 1;
         }
 
         button:hover {
-            background: #1976D2;
+            opacity: 0.9;
         }
 
-        #preview {
-            margin-top: 30px;
+        .tab-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .tab-button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+            background: #e9ecef;
+        }
+
+        .tab-button.active {
+            background: #fff;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .preview-tab {
+            display: none;
             padding: 20px;
             background: #fff;
             border-radius: 4px;
             border: 1px solid #ddd;
-            display: none;
         }
 
-        #preview pre {
+        .preview-tab.active {
+            display: block;
+        }
+
+        #preview-frame {
+            min-height: 500px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 20px;
+            background: #fff;
+        }
+
+        pre {
             background: #f8f9fa;
             padding: 15px;
             border-radius: 4px;
             overflow-x: auto;
-            max-height: 400px;
-            direction: ltr;
-            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
 
-        #live-preview {
-            margin-top: 20px;
-            border: 1px solid #ddd;
-            padding: 20px;
-            border-radius: 4px;
-            display: none;
+        code {
+            font-family: monospace;
+            font-size: 14px;
         }
 
         .success-message, .error-message {
@@ -137,22 +163,6 @@
             background: #f8d7da;
             color: #721c24;
         }
-
-        #copy-button {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 5px 10px;
-            background: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        #copy-button:hover {
-            background: #5a6268;
-        }
     </style>
 </head>
 <body>
@@ -160,6 +170,14 @@
         <h1>יצירת מערכת הזמנות מותאמת אישית</h1>
         
         <form id="configForm">
+            <div class="form-section">
+                <h2>פרטי המערכת</h2>
+                <div class="form-group">
+                    <label>כותרת ראשית</label>
+                    <input type="text" id="mainTitle" value="הזמנת תורים" required>
+                </div>
+            </div>
+
             <div class="form-section">
                 <h2>הגדרות זמנים</h2>
                 <div class="form-group">
@@ -235,98 +253,148 @@
             <div class="button-group">
                 <button type="submit">צור קוד</button>
                 <button type="button" onclick="copyCode()">העתק קוד</button>
+                <button type="button" onclick="showPreview()">תצוגה מקדימה</button>
                 <button type="button" onclick="downloadCode()">הורד קובץ</button>
             </div>
         </form>
 
-        <div id="preview">
-            <pre><code id="generatedCode"></code></pre>
+        <div class="tab-controls">
+            <button onclick="showTab('code')" class="tab-button active">קוד</button>
+            <button onclick="showTab('preview')" class="tab-button">תצוגה מקדימה</button>
+        </div>
+
+        <div id="preview-container">
+            <div id="code-tab" class="preview-tab active">
+                <pre><code id="generatedCode"></code></pre>
+            </div>
+            <div id="preview-tab" class="preview-tab">
+                <div id="preview-frame"></div>
+            </div>
+        </div>
+
+        <div id="successMessage" class="success-message">
+            הקוד נוצר בהצלחה!
+        </div>
+
+        <div id="errorMessage" class="error-message">
+            אירעה שגיאה ביצירת הקוד. אנא נסה שנית.
         </div>
     </div>
 
     <script>
-    document.getElementById('configForm').onsubmit = async (e) => {
-        e.preventDefault();
-        
-        try {
-            // קבלת התאריך ועיבודו לפורמט הנכון
-            const selectedDate = document.getElementById('bookingDate').value;
-            if (!selectedDate) {
-                alert('נא לבחור תאריך');
-                return;
-            }
-
-            // ניקוי והוספת סיומות לקישורים
-            let formUrl = document.getElementById('formUrl').value.trim();
-            let sheetsUrl = document.getElementById('sheetsUrl').value.trim();
-
-            // טיפול בקישור הטופס
-            formUrl = formUrl.replace(/\/edit$|\/viewform$|\/edit\?.*$|\/viewform\?.*$/, '');
-            if (!formUrl.endsWith('/formResponse')) {
-                formUrl = formUrl.endsWith('/') ? formUrl + 'formResponse' : formUrl + '/formResponse';
-            }
-
-            // טיפול בקישור הגיליון
-            sheetsUrl = sheetsUrl.replace(/\?.*$/, ''); // מסיר כל פרמטר קיים
-            sheetsUrl = sheetsUrl.replace(/\/edit$|\/view$|\/copy$/, ''); // מסיר סיומות לא רצויות
-            sheetsUrl = sheetsUrl + '?output=csv';
-
-            // קריאה לקובץ התבנית
-            const response = await fetch('template.html');
-            let template = await response.text();
-            
-            // החלפת כל התגיות בערכים שהוזנו
-            const replacements = {
-                '{{BOOKING_DATE}}': selectedDate,
-                '{{FORM_URL}}': formUrl,
-                '{{SHEETS_URL}}': sheetsUrl,
-                '{{NAME_ENTRY}}': document.getElementById('nameEntry').value,
-                '{{TIME_ENTRY}}': document.getElementById('timeEntry').value,
-                '{{START_TIME}}': document.getElementById('startTime').value,
-                '{{END_TIME}}': document.getElementById('endTime').value,
-                '{{TIME_INTERVAL}}': document.getElementById('timeInterval').value,
-                '{{AVAILABLE_COLOR}}': document.getElementById('availableColor').value,
-                '{{BOOKED_COLOR}}': document.getElementById('bookedColor').value,
-                '{{PENDING_COLOR}}': document.getElementById('pendingColor').value,
-                '{{PRIMARY_COLOR}}': document.getElementById('primaryColor').value,
-                '{{SUCCESS_MESSAGE}}': 'התור נקבע בהצלחה!',
-                '{{ERROR_MESSAGE}}': 'אירעה שגיאה בשליחת הטופס',
-                '{{BUSY_MESSAGE}}': 'התור כבר תפוס'
-            };
-
-            for (const [key, value] of Object.entries(replacements)) {
-                template = template.replace(new RegExp(key, 'g'), value);
-            }
-
-            // הצגת הקוד
-            document.getElementById('generatedCode').textContent = template;
-            document.getElementById('preview').style.display = 'block';
-            
-        } catch (error) {
-            console.error('Error:', error);
-            alert('אירעה שגיאה ביצירת הקוד');
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-button').forEach(btn => 
+                btn.classList.toggle('active', btn.getAttribute('onclick').includes(tabName))
+            );
+            document.querySelectorAll('.preview-tab').forEach(tab => 
+                tab.classList.toggle('active', tab.id === `${tabName}-tab`)
+            );
         }
-    };
 
-    function copyCode() {
-        const code = document.getElementById('generatedCode').textContent;
-        navigator.clipboard.writeText(code)
-            .then(() => alert('הקוד הועתק בהצלחה!'))
-            .catch(err => alert('שגיאה בהעתקת הקוד: ' + err));
-    }
+        function showPreview() {
+            const code = document.getElementById('generatedCode').textContent;
+            const previewFrame = document.getElementById('preview-frame');
+            previewFrame.innerHTML = code;
 
-    function downloadCode() {
-        const code = document.getElementById('generatedCode').textContent;
-        const blob = new Blob([code], { type: 'text/html;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'booking-system.html';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
+            // הרץ את הסקריפטים
+            const scripts = previewFrame.getElementsByTagName('script');
+            Array.from(scripts).forEach(script => {
+                const newScript = document.createElement('script');
+                newScript.textContent = script.textContent;
+                previewFrame.appendChild(newScript);
+            });
+
+            showTab('preview');
+        }
+
+        function copyCode() {
+            const code = document.getElementById('generatedCode').textContent;
+            navigator.clipboard.writeText(code)
+                .then(() => alert('הקוד הועתק בהצלחה!'))
+                .catch(err => alert('שגיאה בהעתקת הקוד: ' + err));
+        }
+
+        function downloadCode() {
+            const code = document.getElementById('generatedCode').textContent;
+            const blob = new Blob([code], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'booking-system.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        document.getElementById('configForm').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            try {
+                // וידוא תאריך
+                const selectedDate = document.getElementById('bookingDate').value;
+                if (!selectedDate) {
+                    alert('נא לבחור תאריך');
+                    return;
+                }
+
+                // ניקוי והוספת סיומות לקישורים
+                let formUrl = document.getElementById('formUrl').value.trim();
+                let sheetsUrl = document.getElementById('sheetsUrl').value.trim();
+
+                // טיפול בקישור הטופס
+                formUrl = formUrl.replace(/\/edit$|\/viewform$|\/edit\?.*$|\/viewform\?.*$/, '');
+                if (!formUrl.endsWith('/formResponse')) {
+                    formUrl = formUrl.endsWith('/') ? formUrl + 'formResponse' : formUrl + '/formResponse';
+                }
+
+                // טיפול בקישור הגיליון
+                sheetsUrl = sheetsUrl.replace(/\?.*$/, ''); // מסיר כל פרמטר קיים
+                sheetsUrl = sheetsUrl.replace(/\/edit$|\/view$|\/copy$/, ''); // מסיר סיומות לא רצויות
+                sheetsUrl = sheetsUrl + '?output=csv';
+
+                // קריאה לקובץ התבנית
+                const response = await fetch('template.html');
+                let template = await response.text();
+                
+                // החלפת כל התגיות בערכים שהוזנו
+                const replacements = {
+                    '{{MAIN_TITLE}}': document.getElementById('mainTitle').value,
+                    '{{BOOKING_DATE}}': selectedDate,
+                    '{{FORM_URL}}': formUrl,
+                    '{{SHEETS_URL}}': sheetsUrl,
+                    '{{NAME_ENTRY}}': document.getElementById('nameEntry').value,
+                    '{{TIME_ENTRY}}': document.getElementById('timeEntry').value,
+                    '{{START_TIME}}': document.getElementById('startTime').value,
+                    '{{END_TIME}}': document.getElementById('endTime').value,
+                    '{{TIME_INTERVAL}}': document.getElementById('timeInterval').value,
+                    '{{AVAILABLE_COLOR}}': document.getElementById('availableColor').value,
+                    '{{BOOKED_COLOR}}': document.getElementById('bookedColor').value,
+                    '{{PENDING_COLOR}}': document.getElementById('pendingColor').value,
+                    '{{PRIMARY_COLOR}}': document.getElementById('primaryColor').value,
+                    '{{SUCCESS_MESSAGE}}': 'התור נקבע בהצלחה!',
+                    '{{ERROR_MESSAGE}}': 'אירעה שגיאה בשליחת הטופס',
+                    '{{BUSY_MESSAGE}}': 'התור כבר תפוס'
+                };
+
+                for (const [key, value] of Object.entries(replacements)) {
+                    template = template.replace(new RegExp(key, 'g'), value);
+                }
+
+                // הצגת הקוד
+                document.getElementById('generatedCode').textContent = template;
+                document.getElementById('code-tab').style.display = 'block';
+                document.getElementById('successMessage').style.display = 'block';
+                document.getElementById('errorMessage').style.display = 'none';
+                
+                showTab('code');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('successMessage').style.display = 'none';
+            }
+        };
     </script>
 </body>
 </html>
