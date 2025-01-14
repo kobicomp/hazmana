@@ -2,181 +2,304 @@
 <html dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>יצירת מערכת הזמנות מותאמת</title>
+    <title>דף ניהול - יצירת מערכת הזמנות</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 600px;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            direction: rtl;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+
+        h1 {
+            text-align: center;
+            color: #2196F3;
+            margin-bottom: 30px;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .form-section h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.2em;
+        }
+
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
-        .form-group label {
+
+        label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
+            color: #444;
         }
-        .form-group input, .form-group select {
+
+        input[type="text"],
+        input[type="url"],
+        input[type="number"],
+        input[type="color"],
+        textarea {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            box-sizing: border-box;
         }
-        #preview {
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        button {
+            background: #2196F3;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
             margin-top: 20px;
-            border: 1px solid #ddd;
-            padding: 10px;
-            white-space: pre-wrap;
-            background-color: #f9f9f9;
+        }
+
+        button:hover {
+            background: #1976D2;
+        }
+
+        .preview {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .preview pre {
+            background: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 400px;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            text-align: center;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <h1>יצירת מערכת הזמנות מותאמת</h1>
-    <form id="configuration-form">
-        <div class="form-group">
-            <label for="formUrl">קישור לטופס Google Forms:</label>
-            <input type="url" id="formUrl" required placeholder="https://docs.google.com/forms/d/e/...">
-        </div>
+    <div class="container">
+        <h1>יצירת מערכת הזמנות מותאמת אישית</h1>
         
-        <div class="form-group">
-            <label for="nameEntryId">מספר אנטרי לשם:</label>
-            <input type="text" id="nameEntryId" required placeholder="entry.XXXXXXXXX">
-        </div>
-        
-        <div class="form-group">
-            <label for="timeEntryId">מספר אנטרי לזמן:</label>
-            <input type="text" id="timeEntryId" required placeholder="entry.XXXXXXXXX">
-        </div>
-        
-        <div class="form-group">
-            <label for="sheetsUrl">קישור לגיליון Google Sheets:</label>
-            <input type="url" id="sheetsUrl" required placeholder="https://docs.google.com/spreadsheets/d/e/...">
-        </div>
-        
-        <div class="form-group">
-            <label for="startTime">שעת התחלה:</label>
-            <select id="startTime">
-                <option value="08">08:00</option>
-                <option value="09">09:00</option>
-                <option value="10">10:00</option>
-                <option value="11">11:00</option>
-                <option value="12">12:00</option>
-                <option value="13">13:00</option>
-                <option value="14">14:00</option>
-                <option value="15">15:00</option>
-                <option value="16">16:00</option>
-                <option value="17">17:00</option>
-                <option value="18">18:00</option>
-                <option value="19">19:00</option>
-            </select>
-        </div>
-        
-        <div class="form-group">
-            <label for="endTime">שעת סיום:</label>
-            <select id="endTime">
-                <option value="09">09:00</option>
-                <option value="10">10:00</option>
-                <option value="11">11:00</option>
-                <option value="12">12:00</option>
-                <option value="13">13:00</option>
-                <option value="14">14:00</option>
-                <option value="15">15:00</option>
-                <option value="16">16:00</option>
-                <option value="17">17:00</option>
-                <option value="18">18:00</option>
-                <option value="19">19:00</option>
-                <option value="20">20:00</option>
-                <option value="21">21:00</option>
-            </select>
-        </div>
-        
-        <div class="form-group">
-            <label for="timeInterval">הפרשי זמן בין פגישות (דקות):</label>
-            <select id="timeInterval">
-                <option value="15">15 דקות</option>
-                <option value="30">30 דקות</option>
-                <option value="45">45 דקות</option>
-                <option value="60">60 דקות</option>
-            </select>
-        </div>
-        
-        <button type="button" onclick="generateHTML()">צור קובץ HTML</button>
-    </form>
+        <form id="configForm">
+            <div class="form-section">
+                <h2>פרטי העסק</h2>
+                <div class="form-group">
+                    <label>כותרת האתר</label>
+                    <input type="text" id="title" value="מערכת הזמנת תורים" required>
+                </div>
 
-    <div id="preview">
-        <h2>תצוגה מקדימה של הקוד</h2>
-        <pre id="preview-code"></pre>
-        <button id="download-btn" style="display:none;" onclick="downloadHTML()">הורד קובץ HTML</button>
+                <div class="form-group">
+                    <label>שם העסק</label>
+                    <input type="text" id="businessName" required>
+                </div>
+
+                <div class="form-group">
+                    <label>תיאור העסק</label>
+                    <textarea id="businessDescription"></textarea>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>הגדרות Google Forms</h2>
+                <div class="form-group">
+                    <label>כתובת הטופס (URL)</label>
+                    <input type="url" id="formUrl" required 
+                           placeholder="https://docs.google.com/forms/d/e/.../formResponse">
+                </div>
+
+                <div class="form-group">
+                    <label>כתובת הגיליון (URL CSV)</label>
+                    <input type="url" id="sheetsUrl" required
+                           placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
+                </div>
+
+                <div class="grid">
+                    <div class="form-group">
+                        <label>מזהה שדה שם (entry.XXX)</label>
+                        <input type="text" id="nameEntry" required
+                               placeholder="entry.123456789">
+                    </div>
+                    <div class="form-group">
+                        <label>מזהה שדה תאריך ושעה (entry.XXX)</label>
+                        <input type="text" id="timeEntry" required
+                               placeholder="entry.987654321">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>הגדרות זמנים</h2>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>שעת התחלה</label>
+                        <input type="number" id="startTime" min="0" max="23" value="8" required>
+                    </div>
+                    <div class="form-group">
+                        <label>שעת סיום</label>
+                        <input type="number" id="endTime" min="0" max="23" value="20" required>
+                    </div>
+                    <div class="form-group">
+                        <label>מרווח זמן (דקות)</label>
+                        <input type="number" id="timeInterval" min="5" max="120" step="5" value="15" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>הגדרות עיצוב</h2>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>צבע תורים פנויים</label>
+                        <input type="color" id="availableColor" value="#10B981">
+                    </div>
+                    <div class="form-group">
+                        <label>צבע תורים תפוסים</label>
+                        <input type="color" id="bookedColor" value="#EF4444">
+                    </div>
+                    <div class="form-group">
+                        <label>צבע תורים בהמתנה</label>
+                        <input type="color" id="pendingColor" value="#F59E0B">
+                    </div>
+                    <div class="form-group">
+                        <label>צבע ראשי</label>
+                        <input type="color" id="primaryColor" value="#2196F3">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit">צור וְהורד קובץ מערכת</button>
+        </form>
+
+        <div id="successMessage" class="success-message">
+            הקובץ נוצר בהצלחה והורד למחשב שלך!
+        </div>
+
+        <div id="errorMessage" class="error-message">
+            אירעה שגיאה ביצירת הקובץ. אנא נסה שנית.
+        </div>
+
+        <div id="preview" class="preview">
+            <pre><code id="generatedCode"></code></pre>
+        </div>
     </div>
 
     <script>
-        async function generateHTML() {
-            // קבלת ערכים מהטופס
-            const formUrl = document.getElementById('formUrl').value;
-            const nameEntryId = document.getElementById('nameEntryId').value;
-            const timeEntryId = document.getElementById('timeEntryId').value;
-            const sheetsUrl = document.getElementById('sheetsUrl').value;
-            const startTime = document.getElementById('startTime').value;
-            const endTime = document.getElementById('endTime').value;
-            const timeInterval = document.getElementById('timeInterval').value;
-
-            // קריאת תוכן הטמפלט
+        document.getElementById('configForm').onsubmit = async (e) => {
+            e.preventDefault();
+            
             try {
-                const response = await fetch('booking_template.html');
-                let templateContent = await response.text();
+                // קריאה לקובץ התבנית
+                const response = await fetch('template.html');
+                let template = await response.text();
+                
+                // החלפת כל התגיות בערכים שהוזנו
+                const replacements = {
+                    '{{TITLE}}': document.getElementById('title').value,
+                    '{{BUSINESS_NAME}}': document.getElementById('businessName').value,
+                    '{{BUSINESS_DESCRIPTION}}': document.getElementById('businessDescription').value,
+                    '{{FORM_URL}}': document.getElementById('formUrl').value,
+                    '{{SHEETS_URL}}': document.getElementById('sheetsUrl').value,
+                    '{{NAME_ENTRY}}': document.getElementById('nameEntry').value,
+                    '{{TIME_ENTRY}}': document.getElementById('timeEntry').value,
+                    '{{START_TIME}}': document.getElementById('startTime').value,
+                    '{{END_TIME}}': document.getElementById('endTime').value,
+                    '{{TIME_INTERVAL}}': document.getElementById('timeInterval').value,
+                    '{{AVAILABLE_COLOR}}': document.getElementById('availableColor').value,
+                    '{{BOOKED_COLOR}}': document.getElementById('bookedColor').value,
+                    '{{PENDING_COLOR}}': document.getElementById('pendingColor').value,
+                    '{{PRIMARY_COLOR}}': document.getElementById('primaryColor').value,
+                    '{{BOOKING_TITLE}}': 'הזמנת תור',
+                    '{{NAME_LABEL}}': 'שם מלא:',
+                    '{{PHONE_LABEL}}': 'טלפון:',
+                    '{{CANCEL_BUTTON}}': 'ביטול',
+                    '{{SUBMIT_BUTTON}}': 'אישור',
+                    '{{SUCCESS_MESSAGE}}': 'התור נקבע בהצלחה!',
+                    '{{ERROR_MESSAGE}}': 'אירעה שגיאה בשליחת הטופס',
+                    '{{BUSY_MESSAGE}}': 'התור כבר תפוס'
+                };
 
-                // החלפת הערכים בתבנית
-                templateContent = templateContent.replace(
-                    /FORM_URL: '.*?'/g, 
-                    `FORM_URL: '${formUrl}'`
-                ).replace(
-                    /SHEETS_URL: '.*?'/g, 
-                    `SHEETS_URL: '${sheetsUrl}'`
-                ).replace(
-                    /NAME_ENTRY: '.*?'/g, 
-                    `NAME_ENTRY: '${nameEntryId}'`
-                ).replace(
-                    /TIME_ENTRY: '.*?'/g, 
-                    `TIME_ENTRY: '${timeEntryId}'`
-                ).replace(
-                    /START_TIME: \d+/g, 
-                    `START_TIME: ${startTime}`
-                ).replace(
-                    /END_TIME: \d+/g, 
-                    `END_TIME: ${endTime}`
-                ).replace(
-                    /TIME_INTERVAL: \d+/g, 
-                    `TIME_INTERVAL: ${timeInterval}`
-                );
+                for (const [key, value] of Object.entries(replacements)) {
+                    template = template.replace(new RegExp(key, 'g'), value);
+                }
 
-                // הצגת תצוגה מקדימה של הקוד
-                const previewCode = document.getElementById('preview-code');
-                previewCode.textContent = templateContent;
+                // יצירת והורדת הקובץ
+                const blob = new Blob([template], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'booking-system.html';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
 
-                // הצגת כפתור הורדה
-                const downloadBtn = document.getElementById('download-btn');
-                downloadBtn.style.display = 'block';
-
-                // שמירת הקוד להורדה
-                window.downloadableHTML = templateContent;
+                // הצגת הודעת הצלחה
+                document.getElementById('successMessage').style.display = 'block';
+                document.getElementById('errorMessage').style.display = 'none';
+                
+                // הצגת הקוד שנוצר
+                document.getElementById('generatedCode').textContent = template;
+                document.getElementById('preview').style.display = 'block';
 
             } catch (error) {
-                console.error('Error reading template:', error);
-                alert('לא ניתן למצוא את קובץ התבנית. אנא וודא שקובץ booking_template.html נמצא באותה תיקייה.');
+                console.error('Error:', error);
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('successMessage').style.display = 'none';
             }
-        }
+        };
 
-        function downloadHTML() {
-            const blob = new Blob([window.downloadableHTML], {type: 'text/html'});
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'booking_system.html';
-            link.click();
-        }
+        // הסתרת הודעות בטעינת הדף
+        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'none';
     </script>
 </body>
 </html>
