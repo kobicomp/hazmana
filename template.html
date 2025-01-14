@@ -336,89 +336,71 @@
                 document.getElementById('booking-modal').style.display = 'none';
             },
 
-            setupFormHandler() {
-                document.getElementById('booking-form').onsubmit = async (e) => {
-                    e.preventDefault();
-                    console.log('התחלת תהליך הזמנה חדשה');
+           setupFormHandler() {
+    document.getElementById('booking-form').onsubmit = async (e) => {
+        e.preventDefault();
+        console.log('התחלת תהליך הזמנה חדשה');
 
-                    const name = document.getElementById('name').value;
-                    const time = document.getElementById('selected-time').value;
-                    const dateStr = this.formatDate(this.currentDate);
-                    const key = `${dateStr}_${time}`;
+        const name = document.getElementById('name').value;
+        const time = document.getElementById('selected-time').value;
+        const dateStr = this.formatDate(this.currentDate);
+        const key = `${dateStr}_${time}`;
 
-                    console.log('פרטי ההזמנה:', { name, time, dateStr, key });
+        console.log('פרטי ההזמנה:', { name, time, dateStr, key });
 
-                    if (this.bookedSlots.has(key) || this.pendingSlots.has(key)) {
-                        console.warn('התור כבר תפוס:', key);
-                        alert(CONFIG.BUSY_MESSAGE);
-                        return;
-                    }
+        if (this.bookedSlots.has(key) || this.pendingSlots.has(key)) {
+            console.warn('התור כבר תפוס:', key);
+            alert(CONFIG.BUSY_MESSAGE);
+            return;
+        }
 
-                    try {
-                        const dateTimeStr = `${dateStr} ${time}`;
-                        
-                        // יצירת iframe נסתר
-                        const iframe = document.createElement('iframe');
-                        iframe.name = 'hidden-iframe';
-                        iframe.style.display = 'none';
-                        document.body.appendChild(iframe);
-                        
-                        // יצירת טופס
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = CONFIG.FORM_URL;
-                        form.target = 'hidden-iframe';
-                        
-                        // הוספת שדות
-                        const nameField = document.createElement('input');
-                        nameField.type = 'hidden';
-                        nameField.name = CONFIG.NAME_ENTRY;
-                        nameField.value = name;
-                        form.appendChild(nameField);
+        try {
+            const dateTimeStr = `${dateStr} ${time}`;
 
-                        const timeField = document.createElement('input');
-                        timeField.type = 'hidden';
-                        timeField.name = CONFIG.TIME_ENTRY;
-                        timeField.value = dateTimeStr;
-                        form.appendChild(timeField);
+            // שימוש בפונקציית fetch עם URLSearchParams
+            const formData = new URLSearchParams();
+            formData.append(CONFIG.NAME_ENTRY, name);
+            formData.append(CONFIG.TIME_ENTRY, dateTimeStr);
 
-                        // הוספת הטופס לדף ושליחתו
-                        document.body.appendChild(form);
-                        form.submit();
-                        
-                        // ניקוי אחרי שנייה
-                        setTimeout(() => {
-                            document.body.removeChild(form);
-                            document.body.removeChild(iframe);
-                        }, 1000);
+            // שליחה באמצעות fetch בשיטת POST
+            const response = await fetch(CONFIG.FORM_URL, {
+                method: 'POST',
+                mode: 'no-cors', // חשוב!
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData.toString()
+            });
 
-                        // עדכון הממשק
-                        this.pendingSlots.set(key, { 
-                            name, 
-                            timestamp: Date.now() 
-                        });
+            console.log('הטופס נשלח בהצלחה');
 
-                        this.renderTimeSlots();
-                        alert(CONFIG.SUCCESS_MESSAGE);
-                        this.closeModal();
+            // עדכון הממשק
+            this.pendingSlots.set(key, { 
+                name, 
+                timestamp: Date.now() 
+            });
 
-                        const timeoutId = setTimeout(() => {
-                            console.log('מנקה תור שפג תוקפו:', key);
-                            this.pendingSlots.delete(key);
-                            this.timeoutIds.delete(key);
-                            this.renderTimeSlots();
-                        }, 300000);
+            this.renderTimeSlots();
+            alert(CONFIG.SUCCESS_MESSAGE);
+            this.closeModal();
 
-                        this.timeoutIds.set(key, timeoutId);
+            const timeoutId = setTimeout(() => {
+                console.log('מנקה תור שפג תוקפו:', key);
+                this.pendingSlots.delete(key);
+                this.timeoutIds.delete(key);
+                this.renderTimeSlots();
+            }, 300000);
 
-                    } catch (error) {
-                        console.error('שגיאה בשליחת ההזמנה:', error);
-                        this.pendingSlots.delete(key);
-                        this.renderTimeSlots();
-                        alert(CONFIG.ERROR_MESSAGE);
-                    }
-                };
-            },
+            this.timeoutIds.set(key, timeoutId);
+
+        } catch (error) {
+            console.error('שגיאה בשליחת ההזמנה:', error);
+            this.pendingSlots.delete(key);
+            this.renderTimeSlots();
+            alert(CONFIG.ERROR_MESSAGE);
+        }
+    };
+},
 
             cleanExpiredPending() {
                 const now = Date.now();
