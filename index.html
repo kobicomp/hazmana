@@ -72,6 +72,12 @@
             gap: 15px;
         }
 
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
         button {
             background: #2196F3;
             color: white;
@@ -80,48 +86,72 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
-            width: 100%;
-            margin-top: 20px;
+            flex: 1;
         }
 
         button:hover {
             background: #1976D2;
         }
 
-        .preview {
+        #preview {
             margin-top: 30px;
             padding: 20px;
-            background: #f8f9fa;
+            background: #fff;
             border-radius: 4px;
+            border: 1px solid #ddd;
             display: none;
         }
 
-        .preview pre {
-            background: #fff;
+        #preview pre {
+            background: #f8f9fa;
             padding: 15px;
             border-radius: 4px;
             overflow-x: auto;
             max-height: 400px;
+            direction: ltr;
+            font-family: monospace;
+        }
+
+        #live-preview {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .success-message, .error-message {
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+            text-align: center;
+            display: none;
         }
 
         .success-message {
             background: #d4edda;
             color: #155724;
-            padding: 15px;
-            border-radius: 4px;
-            margin-top: 20px;
-            text-align: center;
-            display: none;
         }
 
         .error-message {
             background: #f8d7da;
             color: #721c24;
-            padding: 15px;
+        }
+
+        #copy-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background: #6c757d;
+            color: white;
+            border: none;
             border-radius: 4px;
-            margin-top: 20px;
-            text-align: center;
-            display: none;
+            cursor: pointer;
+        }
+
+        #copy-button:hover {
+            background: #5a6268;
         }
     </style>
 </head>
@@ -149,17 +179,17 @@
             </div>
 
             <div class="form-section">
-                <h2>הגדרות Google Forms</h2>
+                <h2>הגדרות Google</h2>
                 <div class="form-group">
                     <label>כתובת הטופס (URL)</label>
                     <input type="url" id="formUrl" required 
-                           placeholder="https://docs.google.com/forms/d/e/.../formResponse">
+                           placeholder="https://docs.google.com/forms/d/e/...">
                 </div>
 
                 <div class="form-group">
-                    <label>כתובת הגיליון (URL CSV)</label>
+                    <label>כתובת הגיליון (URL)</label>
                     <input type="url" id="sheetsUrl" required
-                           placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
+                           placeholder="https://docs.google.com/spreadsheets/d/e/...">
                 </div>
 
                 <div class="grid">
@@ -216,23 +246,67 @@
                 </div>
             </div>
 
-            <button type="submit">צור וְהורד קובץ מערכת</button>
+            <div class="button-group">
+                <button type="submit">צור קוד</button>
+                <button type="button" onclick="copyCode()">העתק קוד</button>
+                <button type="button" onclick="previewCode()">תצוגה מקדימה</button>
+                <button type="button" onclick="downloadCode()">הורד קובץ</button>
+            </div>
         </form>
 
+        <div id="preview">
+            <button id="copy-button" onclick="copyCode()">העתק קוד</button>
+            <pre><code id="generatedCode"></code></pre>
+        </div>
+
+        <div id="live-preview"></div>
+
         <div id="successMessage" class="success-message">
-            הקובץ נוצר בהצלחה והורד למחשב שלך!
+            הקוד נוצר בהצלחה!
         </div>
 
         <div id="errorMessage" class="error-message">
-            אירעה שגיאה ביצירת הקובץ. אנא נסה שנית.
-        </div>
-
-        <div id="preview" class="preview">
-            <pre><code id="generatedCode"></code></pre>
+            אירעה שגיאה ביצירת הקוד. אנא נסה שנית.
         </div>
     </div>
 
     <script>
+        function copyCode() {
+            const codeElement = document.getElementById('generatedCode');
+            navigator.clipboard.writeText(codeElement.textContent)
+                .then(() => alert('הקוד הועתק בהצלחה!'))
+                .catch(err => alert('שגיאה בהעתקת הקוד: ' + err));
+        }
+
+        function downloadCode() {
+            const code = document.getElementById('generatedCode').textContent;
+            const blob = new Blob([code], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'booking-system.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function previewCode() {
+            const preview = document.getElementById('live-preview');
+            const code = document.getElementById('generatedCode').textContent;
+            preview.style.display = 'block';
+            preview.innerHTML = code;
+            
+            // הרץ את הסקריפטים
+            const scripts = preview.getElementsByTagName('script');
+            Array.from(scripts).forEach(script => {
+                const newScript = document.createElement('script');
+                newScript.textContent = script.textContent;
+                preview.appendChild(newScript);
+            });
+            preview.scrollIntoView({ behavior: 'smooth' });
+        }
+
         document.getElementById('configForm').onsubmit = async (e) => {
             e.preventDefault();
             
@@ -250,7 +324,7 @@
                 // טיפול בקישור הגיליון
                 sheetsUrl = sheetsUrl.replace(/\?.*$/, ''); // מסיר כל פרמטר קיים
                 sheetsUrl = sheetsUrl.replace(/\/edit$|\/view$|\/copy$/, ''); // מסיר סיומות לא רצויות
-                sheetsUrl = sheetsUrl.includes('?') ? sheetsUrl + '&output=csv' : sheetsUrl + '?output=csv';
+                sheetsUrl = sheetsUrl + '?output=csv';
 
                 // קריאה לקובץ התבנית
                 const response = await fetch('template.html');
@@ -274,9 +348,6 @@
                     '{{PRIMARY_COLOR}}': document.getElementById('primaryColor').value,
                     '{{BOOKING_TITLE}}': 'הזמנת תור',
                     '{{NAME_LABEL}}': 'שם מלא:',
-                    '{{PHONE_LABEL}}': 'טלפון:',
-                    '{{CANCEL_BUTTON}}': 'ביטול',
-                    '{{SUBMIT_BUTTON}}': 'אישור',
                     '{{SUCCESS_MESSAGE}}': 'התור נקבע בהצלחה!',
                     '{{ERROR_MESSAGE}}': 'אירעה שגיאה בשליחת הטופס',
                     '{{BUSY_MESSAGE}}': 'התור כבר תפוס'
@@ -286,25 +357,15 @@
                     template = template.replace(new RegExp(key, 'g'), value);
                 }
 
-                // יצירת והורדת הקובץ
-                const blob = new Blob([template], { type: 'text/html;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'booking-system.html';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-
-                // הצגת הודעת הצלחה
+                // הצגת הקוד
+                document.getElementById('generatedCode').textContent = template;
+                document.getElementById('preview').style.display = 'block';
                 document.getElementById('successMessage').style.display = 'block';
                 document.getElementById('errorMessage').style.display = 'none';
                 
-                // הצגת הקוד שנוצר
-                document.getElementById('generatedCode').textContent = template;
-                document.getElementById('preview').style.display = 'block';
-
+                // גלילה לקוד
+                document.getElementById('preview').scrollIntoView({ behavior: 'smooth' });
+                
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('errorMessage').style.display = 'block';
@@ -315,6 +376,7 @@
         // הסתרת הודעות בטעינת הדף
         document.getElementById('successMessage').style.display = 'none';
         document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('preview').style.display = 'none';
     </script>
 </body>
 </html>
