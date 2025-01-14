@@ -237,6 +237,20 @@
             e.preventDefault();
             
             try {
+                // בדיקה והוספת סיומות לקישורים
+                let formUrl = document.getElementById('formUrl').value;
+                let sheetsUrl = document.getElementById('sheetsUrl').value;
+
+                // הוספת /formResponse לקישור הטופס אם חסר
+                if (!formUrl.endsWith('/formResponse')) {
+                    formUrl = formUrl.endsWith('/') ? formUrl + 'formResponse' : formUrl + '/formResponse';
+                }
+
+                // הוספת ?output=csv לקישור הגיליון אם חסר
+                if (!sheetsUrl.includes('?output=csv')) {
+                    sheetsUrl = sheetsUrl.includes('?') ? sheetsUrl + '&output=csv' : sheetsUrl + '?output=csv';
+                }
+
                 // קריאה לקובץ התבנית
                 const response = await fetch('template.html');
                 let template = await response.text();
@@ -246,8 +260,8 @@
                     '{{TITLE}}': document.getElementById('title').value,
                     '{{BUSINESS_NAME}}': document.getElementById('businessName').value,
                     '{{BUSINESS_DESCRIPTION}}': document.getElementById('businessDescription').value,
-                    '{{FORM_URL}}': document.getElementById('formUrl').value,
-                    '{{SHEETS_URL}}': document.getElementById('sheetsUrl').value,
+                    '{{FORM_URL}}': formUrl,
+                    '{{SHEETS_URL}}': sheetsUrl,
                     '{{NAME_ENTRY}}': document.getElementById('nameEntry').value,
                     '{{TIME_ENTRY}}': document.getElementById('timeEntry').value,
                     '{{START_TIME}}': document.getElementById('startTime').value,
