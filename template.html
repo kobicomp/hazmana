@@ -357,11 +357,17 @@
                     try {
                         const dateTimeStr = `${dateStr} ${time}`;
                         
-                        // יצירת טופס נסתר ושליחתו
+                        // יצירת iframe נסתר
+                        const iframe = document.createElement('iframe');
+                        iframe.name = 'hidden-iframe';
+                        iframe.style.display = 'none';
+                        document.body.appendChild(iframe);
+                        
+                        // יצירת טופס
                         const form = document.createElement('form');
                         form.method = 'POST';
                         form.action = CONFIG.FORM_URL;
-                        form.target = '_blank';
+                        form.target = 'hidden-iframe';
                         
                         // הוספת שדות
                         const nameField = document.createElement('input');
@@ -379,22 +385,17 @@
                         // הוספת הטופס לדף ושליחתו
                         document.body.appendChild(form);
                         form.submit();
-                        document.body.removeChild(form);
-
-                        console.log('טופס נשלח:', {
-                            name: name,
-                            dateTime: dateTimeStr
-                        });
+                        
+                        // ניקוי אחרי שנייה
+                        setTimeout(() => {
+                            document.body.removeChild(form);
+                            document.body.removeChild(iframe);
+                        }, 1000);
 
                         // עדכון הממשק
                         this.pendingSlots.set(key, { 
                             name, 
                             timestamp: Date.now() 
-                        });
-                        
-                        console.log('התור נוסף לרשימת המתנה:', {
-                            key,
-                            pendingSlots: Array.from(this.pendingSlots.entries())
                         });
 
                         this.renderTimeSlots();
@@ -426,11 +427,11 @@
                         this.pendingSlots.delete(key);
                         const timeoutId = this.timeoutIds.get(key);
                         if (timeoutId) {
-                            clearTimeout(timeoutId);
+                           clearTimeout(timeoutId);
                             this.timeoutIds.delete(key);
                         }
                     }
-                    }
+                }
                 this.renderTimeSlots();
             },
 
