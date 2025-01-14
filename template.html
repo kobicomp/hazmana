@@ -336,72 +336,49 @@
                 document.getElementById('booking-modal').style.display = 'none';
             },
 
-           setupFormHandler() {
+          setupFormHandler() {
     document.getElementById('booking-form').onsubmit = async (e) => {
         e.preventDefault();
-        console.log('התחלת תהליך הזמנה חדשה');
-
         const name = document.getElementById('name').value;
         const time = document.getElementById('selected-time').value;
-        const dateStr = this.formatDate(this.currentDate);
+        const dateStr = document.getElementById('selected-date').value;
         const key = `${dateStr}_${time}`;
 
-        console.log('פרטי ההזמנה:', { name, time, dateStr, key });
-
         if (this.bookedSlots.has(key) || this.pendingSlots.has(key)) {
-            console.warn('התור כבר תפוס:', key);
             alert(CONFIG.BUSY_MESSAGE);
             return;
         }
 
+        const formData = new FormData();
+        formData.append(CONFIG.NAME_ENTRY, name);
+        formData.append(CONFIG.TIME_ENTRY, `${dateStr} ${time}`);
+
         try {
-            const dateTimeStr = `${dateStr} ${time}`;
-
-            // שימוש בפונקציית fetch עם URLSearchParams
-            const formData = new URLSearchParams();
-            formData.append(CONFIG.NAME_ENTRY, name);
-            formData.append(CONFIG.TIME_ENTRY, dateTimeStr);
-
-            // שליחה באמצעות fetch בשיטת POST
-            const response = await fetch(CONFIG.FORM_URL, {
-                method: 'POST',
-                mode: 'no-cors', // חשוב!
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: formData.toString()
-            });
-
-            console.log('הטופס נשלח בהצלחה');
-
-            // עדכון הממשק
-            this.pendingSlots.set(key, { 
-                name, 
-                timestamp: Date.now() 
-            });
-
+            this.pendingSlots.set(key, { name });
             this.renderTimeSlots();
-            alert(CONFIG.SUCCESS_MESSAGE);
-            this.closeModal();
+
+            await fetch(CONFIG.FORM_URL, {
+                method: 'POST',
+                body: formData,
+                mode: 'no-cors'
+            });
 
             const timeoutId = setTimeout(() => {
-                console.log('מנקה תור שפג תוקפו:', key);
                 this.pendingSlots.delete(key);
                 this.timeoutIds.delete(key);
                 this.renderTimeSlots();
-            }, 300000);
+            }, CONFIG.PENDING_TIMEOUT);
 
             this.timeoutIds.set(key, timeoutId);
-
+            this.closeModal();
         } catch (error) {
-            console.error('שגיאה בשליחת ההזמנה:', error);
+            console.error('Error:', error);
             this.pendingSlots.delete(key);
             this.renderTimeSlots();
             alert(CONFIG.ERROR_MESSAGE);
         }
     };
-},
-
+} ,
             cleanExpiredPending() {
                 const now = Date.now();
                 for (const [key, booking] of this.pendingSlots.entries()) {
