@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>{{MAIN_TITLE}}</title>
-   <style>
+    <style>
         :root {
             --available-color: {{AVAILABLE_COLOR}};
             --booked-color: {{BOOKED_COLOR}};
@@ -46,6 +46,13 @@
             font-size: 1.2em;
             font-weight: bold;
             color: #333;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
         }
 
         .slot-wrapper {
@@ -124,13 +131,6 @@
             bottom: 0;
             background: rgba(0, 0, 0, 0.5);
             z-index: 999;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-top: 20px;
         }
 
         .form-group {
@@ -215,8 +215,8 @@
             CONFLICT_MESSAGE: 'מצטערים, התור כבר הוזמן על ידי משתמש אחר',
             ERROR_MESSAGE: 'אירעה שגיאה בשליחת הטופס',
             BUSY_MESSAGE: 'התור כבר תפוס',
-            REFRESH_INTERVAL: 60000, // רענון כל דקה
-            PENDING_TIMEOUT: 60000    // זמן המתנה של דקה
+            REFRESH_INTERVAL: 60000,  // רענון כל דקה
+            PENDING_TIMEOUT: 60000     // זמן המתנה של דקה
         };
 
         const scheduler = {
@@ -229,9 +229,9 @@
                 this.setupFormHandler();
                 this.displayDate();
                 
+                // רענון אוטומטי
                 setInterval(() => {
                     this.loadBookings();
-                    console.log('מרענן נתונים...');
                 }, CONFIG.REFRESH_INTERVAL);
             },
 
@@ -275,7 +275,8 @@
                             const [date, time] = timeStr.split(' ');
                             if (date === CONFIG.BOOKING_DATE) {
                                 const key = `${date}_${time}`;
-                                // אם התור בהמתנה ונמצא בגיליון, נבדוק אם זה אותו משתמש
+                                
+                                // בדיקת תורים בהמתנה
                                 if (currentPendingSlots.has(key)) {
                                     const pendingBooking = currentPendingSlots.get(key);
                                     if (name !== pendingBooking.name) {
@@ -288,6 +289,7 @@
                                         alert(CONFIG.CONFIRMED_MESSAGE);
                                     }
                                 }
+                                
                                 this.bookedSlots.set(key, { name });
                             }
                         }
@@ -364,7 +366,7 @@
                         return;
                     }
 
-                    if (this.bookedSlots.has(key)) {
+                    if (this.bookedSlots.has(key) || this.pendingSlots.has(key)) {
                         alert(CONFIG.BUSY_MESSAGE);
                         return;
                     }
